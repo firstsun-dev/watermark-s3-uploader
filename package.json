@@ -30,6 +30,7 @@
 		"detective": "^5.2.1",
 		"esbuild": "^0.25.0",
 		"eslint": "^9.0.0",
+		"jiti": "^2.0.0",
 		"eslint-plugin-obsidianmd": "latest",
 		"globals": "^16.0.0",
 		"husky": "^9.1.7",

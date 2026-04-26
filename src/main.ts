@@ -49,17 +49,17 @@ export default class R2UploaderPlugin extends Plugin {
 			icon: "image-plus",
 			mobileOnly: false,
 			editorCallback: (editor) => {
-				const input = document.createElement("input");
+				const input = activeDocument.createElement("input");
 				input.type = "file";
 				input.oninput = (event) => {
-					if (event.target) this.runPasteHandler(event, editor);
+					if (event.target) void this.runPasteHandler(event, editor);
 				};
 				input.click();
 				input.remove();
 			},
 		});
 
-		this.pasteFunction = (event, editor) => this.runPasteHandler(event, editor);
+		this.pasteFunction = (event, editor) => { void this.runPasteHandler(event, editor); };
 		this.registerEvent(this.app.workspace.on("editor-paste", this.pasteFunction));
 		this.registerEvent(this.app.workspace.on("editor-drop", this.pasteFunction));
 
@@ -74,7 +74,7 @@ export default class R2UploaderPlugin extends Plugin {
 				const fileContent = await this.app.vault.readBinary(file);
 				const newFile = new File([fileContent], file.name, { type: `image/${file.extension}` });
 				await this.runPasteHandler(null, activeView.editor, newFile);
-				await new Promise((resolve) => setTimeout(resolve, 50));
+				await new Promise((resolve) => activeWindow.setTimeout(resolve, 50));
 				const content = activeView.editor.getValue();
 				const obsidianLink = (this.app.vault as any).getConfig("useMarkdownLinks")
 					? `![](${file.name.split(" ").join("%20")})`
