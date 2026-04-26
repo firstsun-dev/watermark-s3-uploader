@@ -15,7 +15,8 @@ export default class R2UploaderPlugin extends Plugin {
 
 	log(...args: unknown[]): void {
 		if (this.settings.debugMode) {
-			console.log("[R2Uploader]", ...args);
+			const logger = (activeWindow as unknown as { console: Console }).console;
+			logger.log("[R2Uploader]", ...args);
 		}
 	}
 
@@ -76,7 +77,8 @@ export default class R2UploaderPlugin extends Plugin {
 				await this.runPasteHandler(null, activeView.editor, newFile);
 				await new Promise((resolve) => activeWindow.setTimeout(resolve, 50));
 				const content = activeView.editor.getValue();
-				const obsidianLink = (this.app.vault as any).getConfig("useMarkdownLinks")
+				const useMarkdownLinks = (this.app.vault as unknown as { getConfig(key: string): boolean }).getConfig("useMarkdownLinks");
+				const obsidianLink = useMarkdownLinks
 					? `![](${file.name.split(" ").join("%20")})`
 					: `![[${file.name}]]`;
 				const position = content.indexOf(obsidianLink);
@@ -87,18 +89,18 @@ export default class R2UploaderPlugin extends Plugin {
 				} else {
 					new Notice(`Failed to find: ${obsidianLink}`);
 				}
-				await this.app.vault.delete(file);
+				await this.app.fileManager.trashFile(file);
 			} catch (error) {
-				new Notice(`Error processing file: ${error.message}`);
+				const message = error instanceof Error ? error.message : String(error);
+				new Notice(`Error processing file: ${message}`);
 			}
 		}));
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as R2UploaderSettings;
 	}
 
 	async saveSettings() {
@@ -112,7 +114,7 @@ export default class R2UploaderPlugin extends Plugin {
 	): Promise<void> {
 		const adapter = this.app.vault.adapter;
 		const getFilePath = "getFilePath" in adapter
-			? (path: string) => (adapter as any).getFilePath(path)
+			? (path: string) => (adapter as unknown as { getFilePath(p: string): string }).getFilePath(path)
 			: null;
 		return pasteHandler(
 			ev,

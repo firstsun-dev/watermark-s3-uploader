@@ -61,11 +61,6 @@ Go to **Settings → Watermark S3 Uploader** and fill in:
 
 Enable text or logo watermark in settings. Use the **live preview** canvas to adjust position, opacity, font, and offset before saving.
 
-## Credits
-
-Based on [jvsteiner/s3-image-uploader](https://github.com/jvsteiner/s3-image-uploader) (MIT License).
-Extended with WebP conversion, image compression, and watermark support by [ClaudiaFang](https://github.com/firstsun-dev).
-
 ## License
 
 MIT

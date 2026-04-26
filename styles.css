@@ -93,3 +93,15 @@ details[open] > .r2-section-summary::before {
     font-size: 0.75em;
     color: var(--text-muted);
 }
+
+.is-hidden {
+    display: none !important;
+}
+
+.r2-success {
+    color: var(--color-green) !important;
+}
+
+.r2-error {
+    color: var(--color-red) !important;
+}

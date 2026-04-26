@@ -23,7 +23,7 @@ export async function replaceText(
 
 	try {
 		editor.transaction({ changes: [{ from, to, text: replacement }] });
-		if (isInTable) activeWindow.setTimeout(() => { try { editor.refresh(); } catch (_) { /* ignore */ } }, 100);
+		if (isInTable) activeWindow.setTimeout(() => { try { editor.refresh(); } catch { /* ignore */ } }, 100);
 	} catch (e) {
 		console.error("[R2Uploader] replaceText error:", e);
 	}
@@ -152,7 +152,8 @@ export async function pasteHandler(
 			return wrapFileDependingOnType(url, thisType, "");
 		} catch (error) {
 			console.error("[R2Uploader]", error);
-			return `Error uploading file: ${error.message}`;
+			const message = error instanceof Error ? error.message : String(error);
+			return `Error uploading file: ${message}`;
 		}
 	});
 
@@ -165,6 +166,7 @@ export async function pasteHandler(
 		}
 	} catch (error) {
 		console.error("[R2Uploader] upload error:", error);
-		new Notice(`Error: ${error.message}`);
+		const message = error instanceof Error ? error.message : String(error);
+		new Notice(`Error: ${message}`);
 	}
 }
