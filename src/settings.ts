@@ -1,10 +1,12 @@
 import {
 	App,
+	Notice,
 	PluginSettingTab,
 	Setting,
 	TextComponent,
 	setIcon,
 } from "obsidian";
+import { HeadBucketCommand } from "@aws-sdk/client-s3";
 import { paintCheckerboard, paintLogoWatermark, paintTextWatermark, resolvePosition } from "./watermark";
 import type R2UploaderPlugin from "./main";
 
@@ -276,6 +278,35 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 
 		// ── Connection (collapsed) ────────────────────────────────────────────
 		const connEl = this.makeSection(containerEl, "Connection settings", false, "key");
+
+		new Setting(connEl)
+			.setName("Test connection")
+			.setDesc("Verify S3 bucket access using current credentials.")
+			.addButton((btn) => btn
+				.setButtonText("Test")
+				.setCta()
+				.onClick(async () => {
+					btn.setButtonText("Testing...").setDisabled(true);
+					try {
+						const client = this.plugin.s3;
+						if (!client) throw new Error("S3 client not initialized");
+						await client.send(new HeadBucketCommand({ Bucket: this.plugin.settings.bucket }));
+						new Notice("Connection successful!");
+						btn.setButtonText("Success").buttonEl.style.backgroundColor = "var(--color-green)";
+						setTimeout(() => { 
+							btn.setButtonText("Test").setDisabled(false); 
+							btn.buttonEl.style.backgroundColor = ""; 
+						}, 3000);
+					} catch (err: any) {
+						console.error(err);
+						new Notice("Connection failed: " + (err.message || String(err)));
+						btn.setButtonText("Failed").buttonEl.style.backgroundColor = "var(--color-red)";
+						setTimeout(() => { 
+							btn.setButtonText("Test").setDisabled(false); 
+							btn.buttonEl.style.backgroundColor = ""; 
+						}, 3000);
+					}
+				}));
 
 		new Setting(connEl)
 			.setName("Access key ID")

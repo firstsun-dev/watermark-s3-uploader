@@ -11,6 +11,5 @@ jobs:
     uses: firstsun-dev/general-workflows/.github/workflows/obsidian-plugin-ci.yml@main
     with:
       plugin-id: "watermark-s3-uploader"
-      skip-sonar: true
     secrets:
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
