@@ -103,6 +103,9 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >
+            -Dsonar.scanner.force-ci-analysis=true
       - name: Upload Sonar logs
         if: always()
         uses: actions/upload-artifact@v4
