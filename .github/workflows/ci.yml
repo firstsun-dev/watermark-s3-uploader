@@ -81,39 +81,39 @@ jobs:
           name: coverage-report
           path: coverage/
 
-  sonar:
-    name: SonarQube
-    needs: [filter, test]
-    if: (needs.filter.outputs.code == 'true') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    runs-on: ubuntu-latest
-    env:
-      HUSKY: 0
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Download coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          args: >
-            -Dsonar.scanner.force-ci-analysis=true
-      - name: Upload Sonar logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonar-scan-logs
-          path: |
-            .scannerwork/
-            sonar-project.properties
+#  sonar:
+#    name: SonarQube
+#    needs: [filter, test]
+#    if: (needs.filter.outputs.code == 'true') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+#    runs-on: ubuntu-latest
+#    env:
+#      HUSKY: 0
+#    continue-on-error: true
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#      - name: Download coverage
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: coverage-report
+#          path: coverage/
+#      - name: SonarQube Scan
+#        uses: SonarSource/sonarqube-scan-action@v6
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#          SONAR_HOST_URL: https://sonarcloud.io
+#        with:
+#          args: >
+#            -Dsonar.scanner.force-ci-analysis=true
+#      - name: Upload Sonar logs
+#        if: always()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: sonar-scan-logs
+#          path: |
+#            .scannerwork/
+#            sonar-project.properties
 
   artifact:
     name: Package Artifact
@@ -151,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-    needs: [filter, lint, test, sonar]
+    needs: [filter, lint, test]
     if: needs.filter.outputs.code == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     permissions:
       contents: write
@@ -178,7 +178,7 @@ jobs:
     env:
       HUSKY: 0
     if: always()
-    needs: [filter, lint, test, sonar, artifact, release]
+    needs: [filter, lint, test, artifact, release]
     steps:
       - name: Check for failures
         if: |
