@@ -8,7 +8,7 @@ on:
 
 jobs:
   workflow-call:
-    uses: firstsun-dev/general-workflows/.github/workflows/plugin-ci.yml@main
+    uses: firstsun-dev/general-workflows/.github/workflows/obsidian-plugin-ci.yml@main
     with:
       plugin-id: "watermark-s3-uploader"
     secrets:
