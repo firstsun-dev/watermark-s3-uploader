@@ -15,7 +15,8 @@ export default class R2UploaderPlugin extends Plugin {
 
 	log(...args: unknown[]): void {
 		if (this.settings.debugMode) {
-			console.log("[R2Uploader]", ...args);
+			const logger = (activeWindow as unknown as { console: Console }).console;
+			logger.log("[R2Uploader]", ...args);
 		}
 	}
 

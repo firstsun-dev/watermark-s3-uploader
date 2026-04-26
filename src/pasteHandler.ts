@@ -29,7 +29,7 @@ export async function replaceText(
 	}
 }
 
-function detectFileType(file: File, settings: { uploadVideo: boolean; uploadAudio: boolean; uploadPdf: boolean }): string {
+export function detectFileType(file: File, settings: { uploadVideo: boolean; uploadAudio: boolean; uploadPdf: boolean }): string {
 	if (file.type.match(/video.*/) && settings.uploadVideo) return "video";
 	if (file.type.match(/audio.*/) && settings.uploadAudio) return "audio";
 	if (file.type.match(/application\/pdf/) && settings.uploadPdf) return "pdf";
