@@ -4,9 +4,12 @@ on:
   push:
     branches: [main, master, '**']
   pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   workflow-call:
     uses: firstsun-dev/general-workflows/.github/workflows/plugin-ci.yml@main
     with:
       plugin-id: "watermark-s3-uploader"
+    secrets:
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
