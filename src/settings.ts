@@ -292,18 +292,19 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 						if (!client) throw new Error("S3 client not initialized");
 						await client.send(new HeadBucketCommand({ Bucket: this.plugin.settings.bucket }));
 						new Notice("Connection successful!");
-						btn.setButtonText("Success").buttonEl.style.backgroundColor = "var(--color-green)";
-						setTimeout(() => { 
+						btn.setButtonText("Success").buttonEl.addClass("r2-btn-success");
+						activeWindow.setTimeout(() => { 
 							btn.setButtonText("Test").setDisabled(false); 
-							btn.buttonEl.style.backgroundColor = ""; 
+							btn.buttonEl.removeClass("r2-btn-success"); 
 						}, 3000);
-					} catch (err: any) {
+					} catch (err: unknown) {
 						console.error(err);
-						new Notice("Connection failed: " + (err.message || String(err)));
-						btn.setButtonText("Failed").buttonEl.style.backgroundColor = "var(--color-red)";
-						setTimeout(() => { 
+						const message = err instanceof Error ? err.message : String(err);
+						new Notice("Connection failed: " + message);
+						btn.setButtonText("Failed").buttonEl.addClass("r2-btn-error");
+						activeWindow.setTimeout(() => { 
 							btn.setButtonText("Test").setDisabled(false); 
-							btn.buttonEl.style.backgroundColor = ""; 
+							btn.buttonEl.removeClass("r2-btn-error"); 
 						}, 3000);
 					}
 				}));

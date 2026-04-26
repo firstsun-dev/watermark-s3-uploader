@@ -96,3 +96,11 @@ details[open] > .r2-section-summary .r2-chevron svg {
 .r2-error {
     color: var(--color-red) !important;
 }
+
+.r2-btn-success {
+    background-color: var(--color-green) !important;
+}
+
+.r2-btn-error {
+    background-color: var(--color-red) !important;
+}
