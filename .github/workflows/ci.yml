@@ -19,6 +19,8 @@ jobs:
   filter:
     name: Check for Code Changes
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     outputs:
       code: ${{ steps.filter.outputs.code }}
     steps:
@@ -43,6 +45,8 @@ jobs:
     needs: filter
     if: needs.filter.outputs.code == 'true'
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,6 +61,8 @@ jobs:
     needs: filter
     if: needs.filter.outputs.code == 'true'
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -80,6 +86,8 @@ jobs:
     needs: [filter, test]
     if: (needs.filter.outputs.code == 'true') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -111,6 +119,8 @@ jobs:
   artifact:
     name: Package Artifact
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     permissions:
       contents: read
     needs: [filter, test]
@@ -140,6 +150,8 @@ jobs:
   release:
     name: Build and Release
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     needs: [filter, lint, test, sonar]
     if: needs.filter.outputs.code == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     permissions:
@@ -164,6 +176,8 @@ jobs:
   status:
     name: CI/CD Status
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     if: always()
     needs: [filter, lint, test, sonar, artifact, release]
     steps:
