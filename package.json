@@ -31,7 +31,7 @@
 		"builtin-modules": "3.3.0",
 		"conventional-changelog-conventionalcommits": "^8.0.0",
 		"detective": "^5.2.1",
-		"esbuild": "^0.25.0",
+		"esbuild": "^0.27.0",
 		"eslint": "^9.0.0",
 		"jiti": "^2.0.0",
 		"eslint-plugin-obsidianmd": "^0.2.4",
