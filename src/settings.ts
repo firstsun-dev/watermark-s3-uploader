@@ -276,7 +276,14 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("Uploader").setHeading();
 
-		// ── Connection (collapsed) ────────────────────────────────────────────
+		this.addConnectionSection(containerEl);
+		this.addUploadSection(containerEl);
+		this.addImageProcessingSection(containerEl);
+		this.addWatermarkSection(containerEl);
+		this.addDebugSection(containerEl);
+	}
+
+	private addConnectionSection(containerEl: HTMLElement): void {
 		const connEl = this.makeSection(containerEl, "Connection settings", false, "key");
 
 		new Setting(connEl)
@@ -411,8 +418,9 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 				text.setPlaceholder("E.g. 1")
 					.setValue(this.plugin.settings.queryStringValue)
 					.onChange(async (v) => { this.plugin.settings.queryStringValue = v; await this.plugin.saveSettings(); }));
+	}
 
-		// ── Upload (open) ─────────────────────────────────────────────────────
+	private addUploadSection(containerEl: HTMLElement): void {
 		const uploadEl = this.makeSection(containerEl, "Upload settings", true, "upload");
 
 		new Setting(uploadEl)
@@ -454,8 +462,9 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 				text.setPlaceholder("Private/*, **/drafts/**")
 					.setValue(this.plugin.settings.ignorePattern)
 					.onChange(async (v) => { this.plugin.settings.ignorePattern = v.trim(); await this.plugin.saveSettings(); }));
+	}
 
-		// ── Image Processing (open) ───────────────────────────────────────────
+	private addImageProcessingSection(containerEl: HTMLElement): void {
 		const imgEl = this.makeSection(containerEl, "Image processing", true, "image");
 
 		new Setting(imgEl)
@@ -506,8 +515,9 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 						})),
 		];
 		this.toggle(this.compressionSettings, this.plugin.settings.enableImageCompression);
+	}
 
-		// ── Watermark (open) ──────────────────────────────────────────────────
+	private addWatermarkSection(containerEl: HTMLElement): void {
 		const wmEl = this.makeSection(containerEl, "Watermark", true, "stamp");
 
 		const previewWrap = wmEl.createDiv({ cls: "r2-preview-wrap" });
@@ -736,8 +746,9 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 		];
 
 		this.toggle(this.watermarkLogoSettings, this.plugin.settings.watermarkLogoEnabled);
+	}
 
-		// ── Debug (collapsed) ─────────────────────────────────────────────────
+	private addDebugSection(containerEl: HTMLElement): void {
 		const debugEl = this.makeSection(containerEl, "Debug", false, "bug");
 
 		new Setting(debugEl)

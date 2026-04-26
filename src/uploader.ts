@@ -134,6 +134,14 @@ export function formatTimestamp(d: Date): string {
 		`${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
+export function resolveFolder(folder: string, noteBasename: string, now: Date): string {
+	return folder
+		.replace("${year}", now.getFullYear().toString())
+		.replace("${month}", String(now.getMonth() + 1).padStart(2, "0"))
+		.replace("${day}", String(now.getDate()).padStart(2, "0"))
+		.replace("${basename}", noteBasename.replace(/ /g, "-"));
+}
+
 export const wrapFileDependingOnType = (location: string, type: string, localBase: string) => {
 	const srcPrefix = localBase ? "file://" + localBase + "/" : "";
 	if (type === "image") return `![image](${location})`;

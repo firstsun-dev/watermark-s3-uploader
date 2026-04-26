@@ -15,8 +15,7 @@ export default class R2UploaderPlugin extends Plugin {
 
 	log(...args: unknown[]): void {
 		if (this.settings.debugMode) {
-			const logger = (activeWindow as unknown as { console: Console }).console;
-			logger.log("[R2Uploader]", ...args);
+			console.log("[R2Uploader]", ...args);
 		}
 	}
 
@@ -64,6 +63,10 @@ export default class R2UploaderPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on("editor-paste", this.pasteFunction));
 		this.registerEvent(this.app.workspace.on("editor-drop", this.pasteFunction));
 
+		this.registerAutoUploadOnCreate();
+	}
+
+	private registerAutoUploadOnCreate() {
 		this.registerEvent(this.app.vault.on("create", async (file) => {
 			if (this.settings.disableAutoUploadOnCreate) return;
 			if (!(file instanceof TFile)) return;

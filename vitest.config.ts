@@ -6,6 +6,8 @@ export default defineConfig({
 		coverage: {
 			reporter: ["text", "lcov", "html"],
 			exclude: ["node_modules/**", "tests/**"],
+			include: ["src/**"],
+			all: true,
 		},
 	},
 	resolve: {
