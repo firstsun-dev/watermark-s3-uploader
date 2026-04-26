@@ -8,7 +8,7 @@ on:
 
 jobs:
   workflow-call:
-    uses: firstsun-dev/general-workflows/.github/workflows/plugin-ci.yml@main
+    uses: firstsun-dev/general-workflows/.github/workflows/plugin-ci.yml@f8b71c6f3bcc187cc8aa7687ba3fce04afda79fe
     with:
       plugin-id: "watermark-s3-uploader"
       skip-sonar: true
