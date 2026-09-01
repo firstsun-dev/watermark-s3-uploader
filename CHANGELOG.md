@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/firstsun-dev/watermark-bucket-uploader/compare/1.0.1...1.0.2) (2026-09-01)
+
+### Rebrand
+
+* rename display name from "Watermark Bucket Uploader" to "Paste to S3", reposition around zero-friction S3-compatible image uploads with watermarking as an optional feature ([019f5e1](https://github.com/firstsun-dev/watermark-bucket-uploader/commit/019f5e1))
+
 ## [1.0.1](https://github.com/firstsun-dev/watermark-bucket-uploader/compare/1.0.0...1.0.1) (2026-06-16)
 
 ### Bug Fixes
