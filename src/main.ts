@@ -2,7 +2,6 @@
 // Extended with WebP conversion, watermark with live preview, and collapsible settings UI.
 
 import { Editor, MarkdownView, Notice, Plugin, TFile } from "obsidian";
-// Trigger release via source change
 import { S3Client } from "@aws-sdk/client-s3";
 import { minimatch } from "minimatch";
 import { R2UploaderSettings, DEFAULT_SETTINGS, R2UploaderSettingTab, PasteFunction } from "./settings";
@@ -57,7 +56,7 @@ export default class R2UploaderPlugin extends Plugin {
 			icon: "image-plus",
 			mobileOnly: false,
 			editorCallback: (editor) => {
-				const input = activeDocument.createElement("input");
+				const input = createEl("input");
 				input.type = "file";
 				input.oninput = (event) => {
 					if (event.target) void this.runPasteHandler(event, editor);
