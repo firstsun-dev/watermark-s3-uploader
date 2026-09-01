@@ -31,7 +31,7 @@ async function loadImageAndCreateCanvas(
 		const objectUrl = URL.createObjectURL(file);
 		img.onload = () => {
 			log(`loadImageAndCreateCanvas: ${img.naturalWidth}x${img.naturalHeight}`);
-			const canvas = activeDocument.createElement("canvas");
+			const canvas = createEl("canvas");
 			canvas.width = img.naturalWidth;
 			canvas.height = img.naturalHeight;
 			const ctx = canvas.getContext("2d");
