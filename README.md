@@ -1,7 +1,7 @@
 <div align="center">
 
-# Watermark Bucket Uploader
-*Paste an image. It's uploaded, watermarked, and linked — before you lift your finger.*
+# Paste to S3
+*Paste an image. It's optimized, uploaded, and linked automatically.*
 
 [![CI](https://img.shields.io/github/actions/workflow/status/firstsun-dev/watermark-bucket-uploader/ci.yml?branch=main&style=for-the-badge)](https://github.com/firstsun-dev/watermark-bucket-uploader/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/firstsun-dev/watermark-bucket-uploader?style=for-the-badge&color=2ea44f)](https://github.com/firstsun-dev/watermark-bucket-uploader/releases)
@@ -10,23 +10,40 @@
 
 **[Releases](https://github.com/firstsun-dev/watermark-bucket-uploader/releases)** · **[繁體中文](README.zh-TW.md)** · **[Changelog](CHANGELOG.md)**
 
+*Previously Watermark Bucket Uploader. Existing installations and settings continue to work normally.*
+
 </div>
 
-Stop wrestling with image hosting. This Obsidian plugin intercepts every paste and drop, stamps your watermark, converts to WebP, uploads to your own S3/R2 bucket, and drops a clean `![](url)` right into your note. Zero friction. Your images, your infrastructure, your brand.
+A zero-friction image uploader for Obsidian with S3-compatible storage, WebP conversion, compression, and optional watermarks. This plugin intercepts every paste and drop, optimizes the image, uploads it to your own S3-compatible bucket, and drops a clean `![](url)` right into your note. Your images, your infrastructure.
+
+```
+Paste / Drop
+    ↓
+Optimize & Compress
+    ↓
+Convert to WebP
+    ↓
+Optional Watermark
+    ↓
+Upload to S3-compatible storage
+    ↓
+Insert Markdown link
+```
 
 <img src="https://img.shields.io/badge/Cloudflare%20R2-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare R2" height="20"> <img src="https://img.shields.io/badge/AWS%20S3-232F3E?style=flat-square&logo=amazons3&logoColor=white" alt="AWS S3" height="20"> <img src="https://img.shields.io/badge/MinIO-C72E49?style=flat-square&logo=minio&logoColor=white" alt="MinIO" height="20"> <img src="https://img.shields.io/badge/Backblaze%20B2-E21E29?style=flat-square&logo=backblaze&logoColor=white" alt="Backblaze B2" height="20">
 
 <video src="assets/watermark-bucket-uploader-en.webm" width="100%" controls autoplay loop muted playsinline></video>
 
 ![Watermark settings live preview](assets/watermark-settings-preview.png)
-*The Live Preview shows your text and logo watermark exactly as it will be applied, before you upload a single image.*
+*The Live Preview shows your text and logo watermark exactly as it will be applied — if you choose to enable one.*
 
-## What's inside
+## Why Paste to S3
 
-- **Zero-step uploads** — paste or drag an image and it's already in your bucket. No menus, no dialogs.
-- **Your watermark, your brand** — overlay custom text or your logo on every image automatically. Font, size, color, opacity, position — all yours to configure, with a live preview so what you see is what you get.
+- **Paste and keep writing** — paste or drag an image and it's already in your bucket. No menus, no dialogs.
+- **Your storage, not someone else's service** — works with any S3-compatible bucket you already own and control. Bring your own storage.
 - **Smaller files, faster pages** — automatic WebP conversion and compression keep your storage lean and your site fast.
-- **Works with any S3-compatible storage** — Cloudflare R2, AWS S3, MinIO, Backblaze B2, and more. Bring your own bucket.
+- **Optional watermarking** — overlay custom text or a logo when you want one, with font, size, color, opacity, position, and a live preview. Watermarking can be disabled entirely.
+- **Works with any S3-compatible storage** — Cloudflare R2, AWS S3, MinIO, Backblaze B2, and more.
 - **Keeps your private notes private** — glob-based ignore patterns let you exclude specific folders from ever being uploaded.
 - **Not just images** — optionally upload video, audio, and PDFs the same way.
 
@@ -34,7 +51,7 @@ Stop wrestling with image hosting. This Obsidian plugin intercepts every paste a
 
 ### From Community Plugins (recommended)
 1. Open **Settings → Community plugins** and turn off restricted mode.
-2. Click **Browse**, search for **Watermark Bucket Uploader**, click **Install**, then **Enable**.
+2. Click **Browse**, search for **Paste to S3**, click **Install**, then **Enable**.
 
 ### Manual
 1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/firstsun-dev/watermark-bucket-uploader/releases/latest).
@@ -44,15 +61,18 @@ Stop wrestling with image hosting. This Obsidian plugin intercepts every paste a
 
 ## Quick start
 
-1. Go to **Settings → Watermark Bucket Uploader** and fill in your bucket credentials (see [Storage](#storage)).
-2. Configure a text or logo watermark and check the **Live Preview** (see [Watermark](#watermark)).
-3. Paste or drag an image into any note — it uploads, gets watermarked, and a `![](url)` link is inserted automatically.
+1. Install **Paste to S3**.
+2. Open **Settings → Paste to S3** and fill in your S3-compatible storage credentials (see [Storage](#storage)).
+3. Set your public image URL.
+4. Paste or drag an image into any note — it's optimized, uploaded, and a `![](url)` link is inserted automatically.
 
-For a step-by-step walkthrough on setting up Cloudflare R2 and configuring watermarks, see the [Cloudflare R2 & Watermarks Setup Guide](docs/how-to-setup-r2-and-watermarks.md).
+Optional: configure compression, WebP, watermarking, upload-on-drag, and folder exclusions. For a step-by-step walkthrough on setting up Cloudflare R2 and configuring watermarks, see the [Cloudflare R2 & Watermarks Setup Guide](docs/how-to-setup-r2-and-watermarks.md).
 
 ## Configuration
 
 ### Storage
+
+Bring your own storage. Paste to S3 works with any S3-compatible provider — AWS S3, Cloudflare R2, MinIO, Backblaze B2, or any other S3-compatible endpoint.
 
 | Field | Description |
 |---|---|
@@ -72,9 +92,9 @@ For a step-by-step walkthrough on setting up Cloudflare R2 and configuring water
 4. Set **Region** to `auto`.
 5. Set **Custom Image URL** to your public bucket domain.
 
-### Watermark
+### Watermark (optional)
 
-Open the **Live Preview** in settings to see changes in real time.
+Watermarking is off by default and can be disabled entirely — skip this section if you don't need it. When enabled, open the **Live Preview** in settings to see changes in real time.
 
 | Field | Description |
 |---|---|

@@ -1,7 +1,7 @@
 <div align="center">
 
-# Watermark Bucket Uploader
-*貼上圖片，它已經上傳、加上浮水印、插入連結——手指還沒離開鍵盤。*
+# Paste to S3
+*貼上圖片，自動最佳化、上傳、插入連結。*
 
 [![CI](https://img.shields.io/github/actions/workflow/status/firstsun-dev/watermark-bucket-uploader/ci.yml?branch=main&style=for-the-badge)](https://github.com/firstsun-dev/watermark-bucket-uploader/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/firstsun-dev/watermark-bucket-uploader?style=for-the-badge&color=2ea44f)](https://github.com/firstsun-dev/watermark-bucket-uploader/releases)
@@ -10,23 +10,40 @@
 
 **[版本發布](https://github.com/firstsun-dev/watermark-bucket-uploader/releases)** · **[English](README.md)** · **[更新日誌](CHANGELOG.md)**
 
+*前身為 Watermark Bucket Uploader。既有安裝與設定將照常運作。*
+
 </div>
 
-告別手動上傳的繁瑣。這個 Obsidian 外掛攔截每一次貼上與拖放，自動蓋上你的浮水印、轉換成 WebP、上傳到你自己的 S3/R2，然後把乾淨的 `![](url)` 直接寫進筆記。零摩擦。你的圖片、你的基礎設施、你的品牌識別。
+在 Obsidian 貼上圖片後，自動最佳化並上傳到自己的 S3-compatible storage，再插入 Markdown 圖片連結。這個 Obsidian 外掛攔截每一次貼上與拖放，自動最佳化圖片，上傳到你自己的 S3 相容儲存空間，然後把乾淨的 `![](url)` 直接寫進筆記。你的圖片、你的基礎設施。
+
+```
+貼上 / 拖放
+    ↓
+最佳化與壓縮
+    ↓
+轉換為 WebP
+    ↓
+選擇性浮水印
+    ↓
+上傳到 S3 相容儲存空間
+    ↓
+插入 Markdown 連結
+```
 
 <img src="https://img.shields.io/badge/Cloudflare%20R2-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare R2" height="20"> <img src="https://img.shields.io/badge/AWS%20S3-232F3E?style=flat-square&logo=amazons3&logoColor=white" alt="AWS S3" height="20"> <img src="https://img.shields.io/badge/MinIO-C72E49?style=flat-square&logo=minio&logoColor=white" alt="MinIO" height="20"> <img src="https://img.shields.io/badge/Backblaze%20B2-E21E29?style=flat-square&logo=backblaze&logoColor=white" alt="Backblaze B2" height="20">
 
 <video src="assets/watermark-bucket-uploader-zh.webm" width="100%" controls autoplay loop muted playsinline></video>
 
 ![浮水印設定即時預覽](assets/watermark-settings-preview.png)
-*即時預覽會在你上傳任何圖片之前，準確呈現文字與 Logo 浮水印套用後的效果。*
+*即時預覽會準確呈現文字與 Logo 浮水印套用後的效果——如果你選擇啟用的話。*
 
-## 你會愛上它的理由
+## 為什麼選擇 Paste to S3
 
-- **零步驟上傳** — 貼上或拖入圖片，它已經在你的 bucket 裡了。不用選單，不用對話框。
-- **你的浮水印，你的品牌** — 自動在每張圖片疊加文字或 Logo。字體、大小、顏色、透明度、位置全部自訂，設定頁即時預覽，所見即所得。
+- **貼上就好，繼續寫作** — 貼上或拖入圖片，它已經在你的 bucket 裡了。不用選單，不用對話框。
+- **你的儲存空間，不是別人的服務** — 支援任何你已擁有並掌控的 S3 相容 bucket。自帶儲存空間。
 - **更小的檔案，更快的頁面** — 自動 WebP 轉換與壓縮，讓儲存空間更精省，網頁載入更快速。
-- **支援任何 S3 相容儲存** — Cloudflare R2、AWS S3、MinIO、Backblaze B2 等，自帶 bucket 即可使用。
+- **選擇性浮水印** — 需要時可疊加文字或 Logo，字體、大小、顏色、透明度、位置全部自訂，並有即時預覽。浮水印功能可完全關閉。
+- **支援任何 S3 相容儲存** — Cloudflare R2、AWS S3、MinIO、Backblaze B2 等。
 - **私密筆記不外洩** — 用 glob 規則排除特定資料夾，讓它們永遠不被上傳。
 - **不只是圖片** — 可選擇性地以同樣方式上傳影片、音訊與 PDF。
 
@@ -34,7 +51,7 @@
 
 ### 從社群外掛安裝（推薦）
 1. 開啟 **設定 → 社群外掛**，關閉限制模式。
-2. 點擊 **瀏覽**，搜尋 **Watermark Bucket Uploader**，點擊 **安裝**，再點 **啟用**。
+2. 點擊 **瀏覽**，搜尋 **Paste to S3**，點擊 **安裝**，再點 **啟用**。
 
 ### 手動安裝
 1. 從[最新發布版本](https://github.com/firstsun-dev/watermark-bucket-uploader/releases/latest)下載 `main.js`、`manifest.json`、`styles.css`。
@@ -44,15 +61,18 @@
 
 ## 快速開始
 
-1. 前往 **設定 → Watermark Bucket Uploader**，填入你的 bucket 憑證（參見[儲存設定](#儲存設定)）。
-2. 設定文字或 Logo 浮水印，並查看**即時預覽**（參見[浮水印設定](#浮水印設定)）。
-3. 在任意筆記中貼上或拖入圖片——它會自動上傳、加上浮水印，並插入 `![](url)` 連結。
+1. 安裝 **Paste to S3**。
+2. 開啟 **設定 → Paste to S3**，填入你的 S3 相容儲存憑證（參見[儲存設定](#儲存設定)）。
+3. 設定你的公開圖片網址。
+4. 在任意筆記中貼上或拖入圖片——它會自動最佳化、上傳，並插入 `![](url)` 連結。
 
-如需逐步設定 Cloudflare R2 與浮水印的詳細教學，請參閱 [Cloudflare R2 與浮水印設定指南](docs/how-to-setup-r2-and-watermarks.zh-TW.md)。
+選用：可設定壓縮、WebP、浮水印、拖放上傳與資料夾排除規則。如需逐步設定 Cloudflare R2 與浮水印的詳細教學，請參閱 [Cloudflare R2 與浮水印設定指南](docs/how-to-setup-r2-and-watermarks.zh-TW.md)。
 
 ## 詳細設定
 
 ### 儲存設定
+
+自帶儲存空間。Paste to S3 支援任何 S3 相容服務——AWS S3、Cloudflare R2、MinIO、Backblaze B2，或其他任何 S3 相容端點。
 
 | 欄位 | 說明 |
 |---|---|
@@ -72,9 +92,9 @@
 4. 將 **Region** 設定為 `auto`。
 5. 將 **Custom Image URL** 設定為你的公開儲存桶網域。
 
-### 浮水印設定
+### 浮水印設定（選用）
 
-在設定頁面的**即時預覽**中即時查看調整效果。
+浮水印功能預設關閉，可完全停用——若不需要可跳過此節。啟用後，可在設定頁面的**即時預覽**中即時查看調整效果。
 
 | 欄位 | 說明 |
 |---|---|

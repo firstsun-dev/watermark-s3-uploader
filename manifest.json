@@ -1,8 +1,8 @@
 {
 	"id": "watermark-bucket-uploader",
-	"name": "Watermark Bucket Uploader",
+	"name": "Paste to S3",
 	"minAppVersion": "1.6.6",
-	"description": "Upload images to any S3-compatible storage (Cloudflare R2, AWS S3, etc.) with WebP conversion, compression, and text & logo watermark.",
+	"description": "Paste or drag an image to automatically optimize, convert to WebP, compress, and upload it to S3-compatible storage (AWS S3, Cloudflare R2, MinIO, and more), with optional watermarking.",
 	"author": "ClaudiaFang",
 	"authorUrl": "https://github.com/firstsun-dev",
 	"isDesktopOnly": false,

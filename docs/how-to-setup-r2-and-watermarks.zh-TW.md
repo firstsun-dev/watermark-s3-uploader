@@ -1,12 +1,12 @@
 # 如何設定 Cloudflare R2 與自訂浮水印
 
-本指南提供逐步說明，協助你設定 **Watermark Bucket Uploader** 外掛程式以搭配 **Cloudflare R2** 儲存空間，並在已上傳的圖片上設定自訂 Logo 或文字浮水印。
+本指南提供逐步說明，協助你設定 **Paste to S3** 外掛程式以搭配 **Cloudflare R2** 儲存空間，並視需要在已上傳的圖片上設定自訂 Logo 或文字浮水印。
 
 ## 前提條件
 
 開始之前，請確保你已準備好：
 1. 已安裝並更新的 **Obsidian**。
-2. 已在你的 Vault 中安裝並啟用 **Watermark Bucket Uploader** 外掛程式（基本安裝請參閱 [README](../README.md)）。
+2. 已在你的 Vault 中安裝並啟用 **Paste to S3** 外掛程式（基本安裝請參閱 [README](../README.md)）。
 3. 已設定付款資訊的 **Cloudflare** 帳號（Cloudflare R2 提供每月 10 GB 的免費額度）。
 
 ---
@@ -53,7 +53,7 @@
 
 ## 步驟 4：在 Obsidian 中設定儲存空間
 
-1. 開啟 Obsidian，前往 **設定** $\rightarrow$ **Watermark Bucket Uploader**。
+1. 開啟 Obsidian，前往 **設定** $\rightarrow$ **Paste to S3**。
 2. 填寫 **Storage**（儲存設定）欄位：
 
 | 欄位 | 數值 / 設定方式 |
@@ -68,9 +68,9 @@
 
 ---
 
-## 步驟 5：設定自訂浮水印
+## 步驟 5：設定自訂浮水印（選用）
 
-若要在上傳圖片時自動套用浮水印：
+若不需要浮水印，可保持關閉。若要在上傳圖片時自動套用浮水印：
 
 1. 在外掛程式設定中，向下滾動到 **Watermark**（浮水印）區段。
 2. 找到 **Live Preview**（即時預覽）畫布。此處會即時顯示你的調整效果。

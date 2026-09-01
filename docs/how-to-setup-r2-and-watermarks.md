@@ -1,12 +1,12 @@
 # How to Set Up Cloudflare R2 and Custom Watermarks
 
-This guide provides step-by-step instructions to configure the **Watermark Bucket Uploader** plugin with **Cloudflare R2** storage and set up custom logo or text watermarks on your uploaded images.
+This guide provides step-by-step instructions to configure the **Paste to S3** plugin with **Cloudflare R2** storage and set up optional custom logo or text watermarks on your uploaded images.
 
 ## Prerequisites
 
 Before starting, ensure you have:
 1. **Obsidian** installed and updated.
-2. The **Watermark Bucket Uploader** plugin installed and enabled in your vault (see the [README](../README.md) for basic installation).
+2. The **Paste to S3** plugin installed and enabled in your vault (see the [README](../README.md) for basic installation).
 3. A **Cloudflare** account with billing set up (Cloudflare R2 offers a generous free tier of 10 GB/month).
 
 ---
@@ -53,7 +53,7 @@ The plugin needs API credentials to write images to your R2 bucket.
 
 ## Step 4: Configure Storage Settings in Obsidian
 
-1. Open Obsidian and go to **Settings** $\rightarrow$ **Watermark Bucket Uploader**.
+1. Open Obsidian and go to **Settings** $\rightarrow$ **Paste to S3**.
 2. Fill in the **Storage** configuration fields:
 
 | Field | Value / Configuration |
@@ -68,9 +68,9 @@ The plugin needs API credentials to write images to your R2 bucket.
 
 ---
 
-## Step 5: Configure Custom Watermarks
+## Step 5: Configure Custom Watermarks (Optional)
 
-To automatically overlay watermarks on uploaded images:
+Watermarking can be left disabled if you don't need it. To automatically overlay watermarks on uploaded images:
 
 1. In the plugin settings, scroll down to the **Watermark** section.
 2. Locate the **Live Preview** canvas. This displays changes in real-time.
