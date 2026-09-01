@@ -1,14 +1,63 @@
-# Watermark Bucket Uploader
+# Paste to S3
 
-An Obsidian plugin that intercepts image paste/drop events, optionally converts to WebP, applies a canvas-based watermark, uploads to Cloudflare R2 (or any S3-compatible storage), and inserts the resulting URL as a markdown image link.
+**Paste an image. It's optimized, uploaded, and linked automatically.**
+
+A zero-friction image uploader for Obsidian with S3-compatible storage, WebP conversion, compression, and optional watermarks.
+
+> Previously Watermark Bucket Uploader. Existing installations and settings continue to work normally.
+
+```
+Paste / Drop
+    ↓
+Optimize & Compress
+    ↓
+Convert to WebP
+    ↓
+Optional Watermark
+    ↓
+Upload to S3-compatible storage
+    ↓
+Insert Markdown link
+```
+
+## Why Paste to S3
+
+- **Paste and keep writing** — no dialogs, no manual file picking. Paste or drag an image into a note and it's uploaded and linked before you finish your next sentence.
+- **Your storage, not someone else's service** — files live in a bucket you own and control, not a third-party image host. Works with any S3-compatible provider via the AWS SDK.
+- **Automatically optimize images** — configurable WebP conversion and compression (quality, max dimensions, file size limits) keep notes and bandwidth lean without manual editing.
+- **Optional watermarking** — overlay text or a logo with a live preview when you need it. Watermarking can be disabled entirely, and the plugin works fully without it.
+- **Works with S3-compatible providers** — AWS S3, Cloudflare R2, MinIO, Backblaze B2, and any other S3-compatible endpoint. Bring your own storage.
+- **Control what stays private** — ignore patterns skip uploads for specific notes, and a local mode lets you copy files into the vault instead of uploading.
+
+## Storage
+
+Paste to S3 works with **any S3-compatible storage provider**, including:
+
+- AWS S3
+- Cloudflare R2
+- MinIO
+- Backblaze B2
+- Other S3-compatible providers
+
+The core idea: **bring your own storage.** Cloudflare R2 is a popular choice (and gets a quick-setup guide below), but it's just one of many supported providers — not the primary focus.
+
+## Quick Start
+
+1. Install **Paste to S3**.
+2. Open **Settings → Paste to S3**.
+3. Configure your S3-compatible storage credentials.
+4. Set your public image URL.
+5. Paste or drag an image into a note.
+
+Optional: configure compression, WebP, watermarking, upload-on-drag, and folder exclusions.
 
 ## Features
 
 - **Auto-upload on paste/drag** — images are uploaded immediately without manual steps.
 - **WebP conversion** — convert images to WebP before upload for smaller file sizes with configurable quality.
 - **Image compression** — reduce file size with configurable quality, max dimensions, and file size limits.
-- **Text watermark** — overlay custom text with configurable font family, size, color, bold/italic, position, and fine-tuned offsets.
-- **Logo watermark** — overlay a local image from your vault as a watermark with configurable size, opacity, position, and offsets.
+- **Text watermark** *(optional)* — overlay custom text with configurable font family, size, color, bold/italic, position, and fine-tuned offsets.
+- **Logo watermark** *(optional)* — overlay a local image from your vault as a watermark with configurable size, opacity, position, and offsets.
 - **Live watermark preview** — see exactly how the watermark will look with customizable preview background and resolution.
 - **S3 / R2 compatibility** — works with Cloudflare R2, AWS S3, MinIO, and any S3-compatible service.
 - **Local mode** — optionally copy files to a local vault folder instead of uploading.
@@ -26,7 +75,7 @@ An Obsidian plugin that intercepts image paste/drop events, optionally converts 
 
 ## Configuration
 
-Go to **Settings → Watermark Bucket Uploader** to configure your storage provider.
+Go to **Settings → Paste to S3** to configure your storage provider.
 
 ### Core Settings
 
@@ -46,9 +95,9 @@ Go to **Settings → Watermark Bucket Uploader** to configure your storage provi
 - **Query String**: Append versioning or access tokens (e.g. `?v=1`) to inserted links.
 - **Bypass Local CORS**: Enable if you encounter CORS issues during upload from within Obsidian.
 
-### Watermark Settings
+### Watermark Settings (optional)
 
-Configure how your watermarks are rendered using the **Live Preview** in the settings tab.
+Watermarking is off by default and can be disabled entirely — skip this section if you don't need it. When enabled, configure how your watermarks are rendered using the **Live Preview** in the settings tab.
 
 | Field | Description |
 |---|---|
