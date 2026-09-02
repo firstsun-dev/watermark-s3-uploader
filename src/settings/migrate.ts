@@ -1,26 +1,50 @@
 import { DEFAULT_SETTINGS } from "./defaults";
-import { R2UploaderSettings, StorageDestination, StorageProvider } from "./types";
+import { PublicUrlMode, R2UploaderSettings, StorageDestination, StorageProvider } from "./types";
+
+const VALID_STORAGE_DESTINATIONS: readonly StorageDestination[] = ["s3", "local"];
+const VALID_STORAGE_PROVIDERS: readonly StorageProvider[] = [
+	"cloudflare-r2",
+	"aws-s3",
+	"minio",
+	"backblaze-b2",
+	"other",
+];
+const VALID_PUBLIC_URL_MODES: readonly PublicUrlMode[] = ["auto", "custom"];
+
+function isValidStorageDestination(v: unknown): v is StorageDestination {
+	return typeof v === "string" && (VALID_STORAGE_DESTINATIONS as readonly string[]).includes(v);
+}
+
+function isValidStorageProvider(v: unknown): v is StorageProvider {
+	return typeof v === "string" && (VALID_STORAGE_PROVIDERS as readonly string[]).includes(v);
+}
+
+function isValidPublicUrlMode(v: unknown): v is PublicUrlMode {
+	return typeof v === "string" && (VALID_PUBLIC_URL_MODES as readonly string[]).includes(v);
+}
 
 /**
  * Merge persisted data with defaults, then derive the new UX-only fields
  * (storageDestination / storageProvider / publicUrlMode) from legacy fields
- * when they are not already present. Never overwrites a field that is
- * already present in the persisted data — this is the only migration
- * required since no legacy field is renamed or removed.
+ * whenever the persisted value is missing OR not a currently-recognized
+ * value (e.g. written by an older/different build of this schema, or
+ * otherwise malformed). A persisted value that *is* one of the current
+ * valid values is always kept as-is. This never touches credentials,
+ * bucket, folders, endpoints, or URLs — only these three derived fields.
  */
 export function migrateSettings(raw: unknown): R2UploaderSettings {
 	const data = (raw ?? {}) as Partial<R2UploaderSettings>;
 	const merged = Object.assign({}, DEFAULT_SETTINGS, data);
 
-	if (data.storageDestination === undefined) {
-		merged.storageDestination = deriveStorageDestination(data);
-	}
-	if (data.storageProvider === undefined) {
-		merged.storageProvider = deriveStorageProvider(data);
-	}
-	if (data.publicUrlMode === undefined) {
-		merged.publicUrlMode = derivePublicUrlMode(data);
-	}
+	merged.storageDestination = isValidStorageDestination(data.storageDestination)
+		? data.storageDestination
+		: deriveStorageDestination(data);
+	merged.storageProvider = isValidStorageProvider(data.storageProvider)
+		? data.storageProvider
+		: deriveStorageProvider(data);
+	merged.publicUrlMode = isValidPublicUrlMode(data.publicUrlMode)
+		? data.publicUrlMode
+		: derivePublicUrlMode(data);
 
 	return merged;
 }
@@ -98,12 +122,16 @@ const PROVIDER_PRESETS: Record<StorageProvider, ProviderPreset> = {
 	"other": { region: "us-east-1", requiresCustomEndpoint: true, forcePathStyle: true, canAutoPublicUrl: false },
 };
 
+/** Never throws, even if `provider` isn't a recognized key at runtime
+ *  (malformed/legacy persisted data) — falls back to the "other" preset,
+ *  the most conservative choice (requires an explicit endpoint and a
+ *  custom public URL, assumes nothing can be auto-derived). */
 export function getProviderPreset(provider: StorageProvider): ProviderPreset {
-	return PROVIDER_PRESETS[provider];
+	return PROVIDER_PRESETS[provider] ?? PROVIDER_PRESETS.other;
 }
 
 export function providerCanAutoPublicUrl(provider: StorageProvider): boolean {
-	return PROVIDER_PRESETS[provider].canAutoPublicUrl;
+	return getProviderPreset(provider).canAutoPublicUrl;
 }
 
 /** Whether a previously-typed endpoint URL still plausibly belongs to
@@ -136,7 +164,7 @@ export function applyProviderDefaults(
 	settings: R2UploaderSettings,
 	provider: StorageProvider,
 ): Partial<R2UploaderSettings> {
-	const preset = PROVIDER_PRESETS[provider];
+	const preset = getProviderPreset(provider);
 	const patch: Partial<R2UploaderSettings> = {
 		storageProvider: provider,
 		region: preset.region,

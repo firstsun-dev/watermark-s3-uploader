@@ -7,9 +7,14 @@ import {
 	getStorageDestination,
 	getStorageProvider,
 	getPublicUrlMode,
+	getProviderPreset,
+	providerCanAutoPublicUrl,
 } from "../src/settings/migrate";
+import { renderStatusRow, isConfigurationComplete } from "../src/settings/components/StatusRow";
 import { DEFAULT_SETTINGS } from "../src/settings/defaults";
-import type { R2UploaderSettings } from "../src/settings/types";
+import type { R2UploaderSettings, StorageProvider } from "../src/settings/types";
+import type R2UploaderPlugin from "../src/main";
+import { FakeEl } from "./__mocks__/dom-shim";
 
 describe("migrateSettings — backward compatibility", () => {
 	it("derives storageDestination=local from legacy localUpload=true", () => {
@@ -66,6 +71,94 @@ describe("migrateSettings — backward compatibility", () => {
 		const once = migrateSettings({ localUpload: true });
 		const twice = migrateSettings(once);
 		expect(twice).toEqual(once);
+	});
+});
+
+describe("migrateSettings — runtime-invalid persisted values (regression: settings page could fail to render)", () => {
+	// A persisted data.json can contain a `storageProvider` (etc.) written by
+	// an older/different build of this schema, or otherwise malformed data —
+	// migrateSettings must re-derive from legacy fields instead of trusting
+	// it, and no downstream accessor may throw on whatever survives.
+
+	it("re-derives storageProvider when the persisted value is an unrecognized/legacy string, preserving credentials", () => {
+		const legacy = {
+			storageProvider: "r2", // not a valid StorageProvider (current key is "cloudflare-r2")
+			accessKey: "AKIA...",
+			secretKey: "shh",
+			bucket: "my-bucket",
+			folder: "blog/${basename}",
+			useCustomEndpoint: true,
+			customEndpoint: "https://abc123.r2.cloudflarestorage.com/",
+		};
+		const migrated = migrateSettings(legacy);
+		expect(migrated.storageProvider).toBe("cloudflare-r2");
+		expect(migrated.accessKey).toBe("AKIA...");
+		expect(migrated.secretKey).toBe("shh");
+		expect(migrated.bucket).toBe("my-bucket");
+		expect(migrated.folder).toBe("blog/${basename}");
+	});
+
+	it("re-derives storageProvider when the persisted value is a completely malformed type (number)", () => {
+		const migrated = migrateSettings({ storageProvider: 42 as unknown as string, bucket: "keep-me" });
+		expect(migrated.storageProvider).toBe("aws-s3");
+		expect(migrated.bucket).toBe("keep-me");
+	});
+
+	it("re-derives storageDestination when the persisted value is malformed, preserving localUploadFolder", () => {
+		const migrated = migrateSettings({
+			storageDestination: "s3-bucket" as unknown as "s3",
+			localUpload: true,
+			localUploadFolder: "attachments/uploads",
+		});
+		expect(migrated.storageDestination).toBe("local");
+		expect(migrated.localUploadFolder).toBe("attachments/uploads");
+	});
+
+	it("re-derives publicUrlMode when the persisted value is malformed, preserving customImageUrl", () => {
+		const migrated = migrateSettings({
+			publicUrlMode: "manual" as unknown as "auto",
+			useCustomImageUrl: true,
+			customImageUrl: "https://cdn.example.com/",
+		});
+		expect(migrated.publicUrlMode).toBe("custom");
+		expect(migrated.customImageUrl).toBe("https://cdn.example.com/");
+	});
+
+	it("keeps a valid persisted storageProvider as-is rather than re-deriving it", () => {
+		const migrated = migrateSettings({ storageProvider: "minio", useCustomEndpoint: false });
+		expect(migrated.storageProvider).toBe("minio");
+	});
+
+	it("getProviderPreset never throws for an unrecognized provider value and falls back to the safest ('other') preset", () => {
+		const bogus = "r2" as unknown as StorageProvider;
+		expect(() => getProviderPreset(bogus)).not.toThrow();
+		expect(getProviderPreset(bogus)).toMatchObject({ requiresCustomEndpoint: true, canAutoPublicUrl: false });
+	});
+
+	it("providerCanAutoPublicUrl never throws for an unrecognized provider value", () => {
+		const bogus = "r2" as unknown as StorageProvider;
+		expect(() => providerCanAutoPublicUrl(bogus)).not.toThrow();
+		expect(providerCanAutoPublicUrl(bogus)).toBe(false);
+	});
+
+	it("full pipeline: legacy raw data with an invalid storageProvider migrates and validates without throwing anywhere", () => {
+		const legacy = {
+			storageProvider: "cloudflare_r2_legacy",
+			accessKey: "AKIA...",
+			secretKey: "shh",
+			bucket: "my-bucket",
+			useCustomEndpoint: true,
+			customEndpoint: "https://abc123.r2.cloudflarestorage.com/",
+		};
+		expect(() => {
+			const migrated = migrateSettings(legacy);
+			getProviderPreset(getStorageProvider(migrated));
+			providerCanAutoPublicUrl(getStorageProvider(migrated));
+			const plugin = { settings: migrated, lastConnectionResult: null } as unknown as R2UploaderPlugin;
+			isConfigurationComplete(plugin);
+			const container = new FakeEl("div");
+			renderStatusRow(container as unknown as HTMLElement, plugin);
+		}).not.toThrow();
 	});
 });
 

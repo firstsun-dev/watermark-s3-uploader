@@ -53,14 +53,18 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("Paste to S3").setHeading();
 		this.statusEl = containerEl.createDiv();
-		this.refreshStatus();
 
 		const layout = containerEl.createDiv({ cls: "r2-layout" });
 		this.navEl = layout.createDiv();
 		this.contentEl = layout.createDiv({ cls: "r2-content" });
 
+		// Nav + the active config page render first and are what the user
+		// actually needs to fix their config with — a status-row failure
+		// (e.g. from malformed persisted data) must never keep them from
+		// appearing, so status is rendered last and isolated in refreshStatus().
 		this.renderNav();
 		this.renderActiveSection();
+		this.refreshStatus();
 	}
 
 	private renderNav(): void {
@@ -100,6 +104,14 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 
 	private refreshStatus(): void {
 		this.statusEl.empty();
-		renderStatusRow(this.statusEl, this.plugin);
+		try {
+			renderStatusRow(this.statusEl, this.plugin);
+		} catch (err) {
+			console.error("Paste to S3: failed to render setup status", err);
+			this.statusEl.createDiv({
+				cls: "r2-status-row r2-status-fallback",
+				text: "⚠ Unable to read setup status. Your configuration below is unaffected.",
+			});
+		}
 	}
 }
