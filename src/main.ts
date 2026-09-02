@@ -5,8 +5,9 @@ import { Editor, MarkdownView, Notice, Plugin, TFile } from "obsidian";
 // Trigger release via source change
 import { S3Client } from "@aws-sdk/client-s3";
 import { minimatch } from "minimatch";
-import { R2UploaderSettings, DEFAULT_SETTINGS, R2UploaderSettingTab, PasteFunction } from "./settings";
-import { createS3Client } from "./uploader";
+import { R2UploaderSettings, R2UploaderSettingTab, PasteFunction } from "./settings";
+import { migrateSettings } from "./settings/migrate";
+import { createS3Client, resolvePublicBaseUrl } from "./uploader";
 import { pasteHandler } from "./pasteHandler";
 
 const AUTO_UPLOAD_DELAY = 50;
@@ -32,17 +33,7 @@ export default class R2UploaderPlugin extends Plugin {
 	createS3Client(): void {
 		if (!this.settings.region) return;
 
-		if (this.settings.useCustomImageUrl) {
-			this.settings.imageUrlPath = this.settings.customImageUrl;
-		} else {
-			const baseUrl = this.settings.useCustomEndpoint
-				? this.settings.customEndpoint
-				: `https://s3.${this.settings.region}.amazonaws.com/`;
-			this.settings.imageUrlPath = this.settings.forcePathStyle
-				? `${baseUrl}${this.settings.bucket}/`
-				: baseUrl.replace("://", `://${this.settings.bucket}.`);
-		}
-
+		this.settings.imageUrlPath = resolvePublicBaseUrl(this.settings);
 		this.s3 = createS3Client(this.settings);
 	}
 
@@ -121,7 +112,7 @@ export default class R2UploaderPlugin extends Plugin {
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as R2UploaderSettings;
+		this.settings = migrateSettings(await this.loadData());
 	}
 
 	async saveSettings() {

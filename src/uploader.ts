@@ -127,13 +127,7 @@ export async function uploadFile(
 		Body: new Uint8Array(buf),
 		ContentType: file.type,
 	}));
-	let urlString = settings.imageUrlPath + key;
-	if (settings.queryStringKey && settings.queryStringValue) {
-		const urlObject = new URL(urlString);
-		urlObject.searchParams.append(settings.queryStringKey, settings.queryStringValue);
-		urlString = urlObject.toString();
-	}
-	return urlString;
+	return appendQueryString(settings.imageUrlPath + key, settings.queryStringKey, settings.queryStringValue);
 }
 
 export function formatTimestamp(d: Date): string {
@@ -148,6 +142,67 @@ export function resolveFolder(folder: string, noteBasename: string, now: Date): 
 		.replace("${month}", String(now.getMonth() + 1).padStart(2, "0"))
 		.replace("${day}", String(now.getDate()).padStart(2, "0"))
 		.replace("${basename}", noteBasename.replace(/ /g, "-"));
+}
+
+// ── Shared path/URL resolution ───────────────────────────────────────────
+// These are the single source of truth for how an object key and its public
+// URL are derived. Both the real upload path (above/pasteHandler.ts) and the
+// settings "outcome preview" use these exact functions so the preview can
+// never drift from actual upload behavior.
+
+const SEQ_PADDING = 4;
+
+/** Public base URL an uploaded object will be served from (S3 mode only). */
+export function resolvePublicBaseUrl(settings: R2UploaderSettings): string {
+	if (settings.useCustomImageUrl) {
+		return settings.customImageUrl;
+	}
+	const baseUrl = settings.useCustomEndpoint
+		? settings.customEndpoint
+		: `https://s3.${settings.region}.amazonaws.com/`;
+	return settings.forcePathStyle
+		? `${baseUrl}${settings.bucket}/`
+		: baseUrl.replace("://", `://${settings.bucket}.`);
+}
+
+/** Appends `key=value` as a query string param, if both are set. */
+export function appendQueryString(urlString: string, key: string, value: string): string {
+	if (!key || !value) return urlString;
+	try {
+		const urlObject = new URL(urlString);
+		urlObject.searchParams.append(key, value);
+		return urlObject.toString();
+	} catch {
+		return urlString;
+	}
+}
+
+/** Full public URL for an object key, including query string, S3 mode only. */
+export function resolvePublicUrl(settings: R2UploaderSettings, key: string): string {
+	return appendQueryString(
+		resolvePublicBaseUrl(settings) + key,
+		settings.queryStringKey,
+		settings.queryStringValue,
+	);
+}
+
+export function buildFileName(seq: number, now: Date, ext: string): string {
+	const seqStr = String(seq).padStart(SEQ_PADDING, "0");
+	return `${seqStr}_${formatTimestamp(now)}.${ext}`;
+}
+
+/** Object key (folder + generated filename) for an upload — the same logic
+ *  used for the real upload and for the settings outcome preview. */
+export function buildObjectKey(
+	folder: string,
+	basename: string,
+	seq: number,
+	ext: string,
+	now: Date = new Date(),
+): string {
+	const keyFolder = resolveFolder(folder, basename, now);
+	const fileName = buildFileName(seq, now, ext);
+	return keyFolder ? `${keyFolder}/${fileName}` : fileName;
 }
 
 export const wrapFileDependingOnType = (location: string, type: string, localBase: string) => {
