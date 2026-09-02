@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/firstsun-dev/watermark-bucket-uploader/compare/1.0.2...1.0.3) (2026-09-02)
+
+### Bug Fixes
+
+* **release:** build/attest/upload from exact release tag, drop unsupported zip ([1b191d7](https://github.com/firstsun-dev/watermark-bucket-uploader/commit/1b191d73582aedd90e4220a11acde090215b7f9e)), closes [firstsun-dev/.github#17](https://github.com/firstsun-dev/.github/issues/17) [firstsun-dev/.github#17](https://github.com/firstsun-dev/.github/issues/17)
+
 ## [1.0.2](https://github.com/firstsun-dev/watermark-bucket-uploader/compare/1.0.1...1.0.2) (2026-09-01)
 
 ### Rebrand
