@@ -54,6 +54,6 @@ export const DEFAULT_SETTINGS: R2UploaderSettings = {
 	debugMode: false,
 	uploadSeq: 0,
 	storageDestination: "s3",
-	storageProvider: "other",
+	storageProvider: "aws-s3",
 	publicUrlMode: "auto",
 };

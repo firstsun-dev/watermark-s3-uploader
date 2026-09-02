@@ -102,8 +102,11 @@ export function applyProviderDefaults(
 	if (preset.region !== undefined && !settings.region) {
 		patch.region = preset.region;
 	}
-	if (preset.requiresCustomEndpoint !== undefined && !settings.customEndpoint) {
-		patch.useCustomEndpoint = preset.requiresCustomEndpoint;
+	// Only ever turn useCustomEndpoint ON when the provider requires it and the
+	// user hasn't touched it yet — never auto-disable a toggle the user may
+	// have already flipped on manually (even before typing a URL).
+	if (preset.requiresCustomEndpoint && !settings.useCustomEndpoint && !settings.customEndpoint) {
+		patch.useCustomEndpoint = true;
 	}
 	if (preset.forcePathStyle !== undefined && !settings.forcePathStyle) {
 		patch.forcePathStyle = preset.forcePathStyle;

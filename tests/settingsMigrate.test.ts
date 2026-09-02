@@ -111,6 +111,20 @@ describe("applyProviderDefaults — provider selection never destroys manual con
 		expect(patch.useCustomEndpoint).toBeUndefined();
 	});
 
+	it("never auto-disables a manually toggled-on useCustomEndpoint, even with no URL typed yet", () => {
+		// User flipped "Custom endpoint" on in Advanced but hasn't typed a URL,
+		// then switches to a provider that doesn't require a custom endpoint.
+		const s = { ...DEFAULT_SETTINGS, useCustomEndpoint: true, customEndpoint: "" };
+		const patch = applyProviderDefaults(s, "aws-s3");
+		expect(patch.useCustomEndpoint).toBeUndefined();
+	});
+
+	it("still turns useCustomEndpoint on for a provider that requires it when nothing has been set yet", () => {
+		const s = { ...DEFAULT_SETTINGS, useCustomEndpoint: false, customEndpoint: "" };
+		const patch = applyProviderDefaults(s, "cloudflare-r2");
+		expect(patch.useCustomEndpoint).toBe(true);
+	});
+
 	it("does not touch forcePathStyle if the user already turned it on", () => {
 		const s = { ...DEFAULT_SETTINGS, forcePathStyle: true };
 		const patch = applyProviderDefaults(s, "aws-s3");

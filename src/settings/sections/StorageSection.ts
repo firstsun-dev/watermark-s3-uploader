@@ -119,8 +119,9 @@ export function renderStorageSection(
 			text.setPlaceholder("HTTPS://xxxx.r2.cloudflarestorage.com/")
 				.setValue(plugin.settings.customEndpoint)
 				.onChange(async (v) => {
-					let normalized = /^https?:\/\//.test(v) ? v : "https://" + v;
-					normalized = normalized.replace(/([^/])$/, "$1/");
+					let normalized = v;
+					if (normalized && !/^https?:\/\//.test(normalized)) normalized = "https://" + normalized;
+					if (normalized) normalized = normalized.replace(/([^/])$/, "$1/");
 					plugin.settings.customEndpoint = normalized.trim();
 					plugin.createS3Client();
 					await plugin.saveSettings();
