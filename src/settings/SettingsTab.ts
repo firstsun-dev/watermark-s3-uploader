@@ -27,7 +27,7 @@ export class R2UploaderSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.addClass("r2-settings");
 
-		new Setting(containerEl).setName("Paste to S3").setHeading();
+		new Setting(containerEl).setName("Uploader").setHeading();
 		renderStatusRow(containerEl, this.plugin);
 
 		const redraw = () => this.display();

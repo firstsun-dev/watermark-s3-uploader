@@ -1,106 +1,246 @@
-/* Watermark Bucket Uploader — Settings UI styles */
+/* Paste to S3 — Settings UI styles
+ * Namespace: r2-*
+ * Sections (Storage/Links/Upload behavior/Image optimization/Watermark/
+ * Advanced) are collapsible <details> blocks; "Advanced" sub-disclosures
+ * inside a section use a lighter nested-card treatment; a few reusable
+ * layout primitives (status block, outcome/result block, two-column field
+ * layout) are shared across sections instead of one-off per-section rules.
+ */
 
-.r2-settings details {
-    margin-bottom: 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    overflow: hidden;
+.r2-settings {
+	max-width: 720px;
+}
+
+/* ── Top-level collapsible section ("1. Storage", "2. Links", ...) ──────── */
+
+.r2-settings .r2-section {
+	margin-bottom: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	overflow: hidden;
+	background: var(--background-primary);
 }
 
 .r2-section-summary {
-    padding: 8px 12px;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--background-secondary);
-    user-select: none;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 7px;
+	padding: 10px 14px;
+	font-weight: 600;
+	cursor: pointer;
+	background: var(--background-secondary);
+	user-select: none;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .r2-section-summary::-webkit-details-marker {
-    display: none;
-}
-
-/* Chevron arrow replaced by lucide icon transitions */
-details[open] > .r2-section-summary .r2-chevron svg {
-    transform: rotate(90deg);
+	display: none;
 }
 
 .r2-section-icon {
-    display: flex;
-    align-items: center;
-    color: var(--text-accent);
-    flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	color: var(--text-accent);
+	flex-shrink: 0;
 }
 
 .r2-section-icon svg {
-    width: 15px;
-    height: 15px;
-    transition: transform 0.15s ease-in-out;
+	width: 15px;
+	height: 15px;
 }
 
-.r2-section-body {
-    padding: 8px 0;
+.r2-section-title {
+	overflow-wrap: anywhere;
 }
 
-/* Sub-section headers inside open sections */
+/* ── Nested "Advanced ▸" disclosure inside a section ─────────────────────── */
+
+.r2-advanced {
+	margin: 8px 0 0;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 4px;
+}
+
+.r2-advanced-summary {
+	padding: 6px 0;
+	cursor: pointer;
+	user-select: none;
+	list-style: none;
+	font-size: 0.85em;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.r2-advanced-summary::-webkit-details-marker {
+	display: none;
+}
+
+.r2-advanced[open] > .r2-advanced-summary {
+	color: var(--text-normal);
+}
+
+/* Sub-section headers inside an open section (e.g. "Additional file types") */
 .r2-subsection-heading {
-    font-size: 0.8em;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    padding: 10px 16px 4px;
-    margin: 0;
-    border-top: 1px solid var(--background-modifier-border);
+	font-size: 0.8em;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-muted);
+	padding: 10px 0 4px;
+	margin: 0;
+	border-top: 1px solid var(--background-modifier-border);
 }
 
 .r2-subsection-heading:first-child {
-    border-top: none;
+	border-top: none;
+	padding-top: 0;
 }
 
-/* Watermark preview */
+.r2-frontmatter-note code {
+	font-size: 0.85em;
+}
+
+/* ── Status / setup summary (top of the settings page) ───────────────────── */
+
+.r2-status-row {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 12px 14px;
+	margin-bottom: 16px;
+	border-radius: 8px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.r2-status-headline {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.r2-status-badge {
+	font-weight: 600;
+}
+
+.r2-status-ok {
+	color: var(--color-green);
+}
+
+.r2-status-warn {
+	color: var(--text-warning, var(--color-orange));
+}
+
+.r2-status-detail,
+.r2-status-url {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	overflow-wrap: anywhere;
+}
+
+/* ── Connection test result ───────────────────────────────────────────────── */
+
+.r2-connection-status {
+	font-size: 0.85em;
+	padding: 2px 0 8px;
+	overflow-wrap: anywhere;
+}
+
+/* ── Outcome preview (object key / inserted link) ─────────────────────────── */
+
+.r2-outcome-preview {
+	margin-top: 8px;
+	padding: 10px 12px;
+	border-radius: 6px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.r2-outcome-heading {
+	margin: 0 0 6px;
+	font-size: 0.8em;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-muted);
+}
+
+.r2-outcome-row {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px 0;
+}
+
+.r2-outcome-label {
+	font-size: 0.75em;
+	color: var(--text-muted);
+}
+
+.r2-outcome-value {
+	font-size: 0.85em;
+	padding: 4px 6px;
+	border-radius: 4px;
+	background: var(--background-primary-alt, var(--background-primary));
+	overflow-x: auto;
+	white-space: nowrap;
+	max-width: 100%;
+}
+
+.r2-outcome-value-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+/* ── Watermark live preview ───────────────────────────────────────────────── */
+
 .r2-preview-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 12px 16px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 0;
 }
 
 .r2-preview-canvas {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    border-radius: 4px;
-    border: 1px solid var(--background-modifier-border);
-    display: block;
+	width: 100%;
+	max-width: 400px;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	display: block;
 }
 
 .r2-preview-label {
-    font-size: 0.75em;
-    color: var(--text-muted);
+	font-size: 0.75em;
+	color: var(--text-muted);
+	margin: 0;
 }
 
+/* ── Shared state utilities ───────────────────────────────────────────────── */
+
 .is-hidden {
-    display: none !important;
+	display: none !important; /* toggled at runtime for progressive-disclosure fields; !important needed to override Setting's own inline-flex display */
 }
 
 .r2-success {
-    color: var(--color-green) !important;
+	color: var(--color-green) !important; /* overrides Obsidian's default .setting-item-description color */
 }
 
 .r2-error {
-    color: var(--color-red) !important;
+	color: var(--color-red) !important; /* overrides Obsidian's default .setting-item-description color */
 }
 
-.r2-btn-success {
-    background-color: var(--color-green) !important;
-}
+/* ── Narrow pane / mobile ─────────────────────────────────────────────────── */
 
-.r2-btn-error {
-    background-color: var(--color-red) !important;
+@media (max-width: 480px) {
+	.r2-status-row {
+		padding: 10px;
+	}
+
+	.r2-outcome-value {
+		white-space: pre-wrap;
+		word-break: break-all;
+	}
 }
