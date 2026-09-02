@@ -4,12 +4,12 @@
 import { Editor, MarkdownView, Notice, Plugin, TFile } from "obsidian";
 // Trigger release via source change
 import { S3Client } from "@aws-sdk/client-s3";
-import { minimatch } from "minimatch";
 import { R2UploaderSettings, R2UploaderSettingTab, PasteFunction } from "./settings";
 import { migrateSettings, getStorageDestination } from "./settings/migrate";
 import { isConfigurationComplete, testS3Connection } from "./settings/components/StatusRow";
 import { createS3Client } from "./uploader";
 import { pasteHandler } from "./pasteHandler";
+import { matchesIgnorePattern } from "./ignorePattern";
 
 const AUTO_UPLOAD_DELAY = 50;
 const IMAGE_EXT_REGEX = /\.(jpg|jpeg|png|gif|webp)$/i;
@@ -27,12 +27,6 @@ export default class R2UploaderPlugin extends Plugin {
 		if (this.settings.debugMode) {
 			console.debug("[R2Uploader]", ...args);
 		}
-	}
-
-	shouldIgnoreCurrentFile(): boolean {
-		const noteFile = this.app.workspace.getActiveFile();
-		if (!noteFile || !this.settings.ignorePattern) return false;
-		return matchesGlobPattern(noteFile.path, this.settings.ignorePattern);
 	}
 
 	/** Creates/updates the S3 client only. Public link generation is handled
@@ -93,14 +87,15 @@ export default class R2UploaderPlugin extends Plugin {
 	private async handleFileCreate(file: TFile) {
 		if (this.settings.disableAutoUploadOnCreate) return;
 		if (!IMAGE_EXT_REGEX.test(file.path)) return;
-		
+
 		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!activeView || this.shouldIgnoreCurrentFile()) return;
+		if (!activeView) return;
+		if (matchesIgnorePattern(this.settings.ignorePattern, { notePath: activeView.file?.path, filePath: file.path })) return;
 
 		try {
 			const fileContent = await this.app.vault.readBinary(file);
 			const newFile = new File([fileContent], file.name, { type: `image/${file.extension}` });
-			await this.runPasteHandler(null, activeView.editor, newFile);
+			await this.runPasteHandler(null, activeView.editor, newFile, file.path);
 			
 			// Wait for the editor to update with the new Obsidian link
 			await new Promise((resolve) => activeWindow.setTimeout(resolve, AUTO_UPLOAD_DELAY));
@@ -142,6 +137,7 @@ export default class R2UploaderPlugin extends Plugin {
 		ev: ClipboardEvent | DragEvent | Event | null,
 		editor: Editor,
 		directFile?: File,
+		sourceFilePath?: string,
 	): Promise<void> {
 		const adapter = this.app.vault.adapter;
 		const getFilePath = "getFilePath" in adapter
@@ -165,15 +161,10 @@ export default class R2UploaderPlugin extends Plugin {
 				if (!(tfile instanceof TFile)) return undefined;
 				return this.app.metadataCache.getFileCache(tfile)?.frontmatter;
 			},
-			() => this.shouldIgnoreCurrentFile(),
+			sourceFilePath,
 			(...args) => this.log(...args),
 			() => this.saveSettings(),
 			directFile,
 		);
 	}
-}
-
-function matchesGlobPattern(filePath: string, pattern: string): boolean {
-	if (!pattern?.trim()) return false;
-	return pattern.split(",").map((p) => p.trim()).some((p) => minimatch(filePath, p));
 }
