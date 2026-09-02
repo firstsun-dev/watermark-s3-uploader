@@ -10,7 +10,7 @@ import { FieldBuilder, toggleSettingsVisibility } from "../components/fields";
  * WebP + compression; Watermark has its own top-level section per the IA.
  */
 export function renderImageOptimizationSection(containerEl: HTMLElement, plugin: R2UploaderPlugin): void {
-	const section = createSection(containerEl, "4. Image optimization", false, "image");
+	const section = createSection(containerEl, "Image optimization", "image");
 	const fields = new FieldBuilder(plugin);
 
 	fields.toggle(section, "Convert to WebP", "Convert images to WebP before uploading (applied first). Filename becomes .webp.", "convertToWebP");

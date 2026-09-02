@@ -7,7 +7,7 @@ import { FieldBuilder } from "../components/fields";
  * Only genuinely uncommon/technical settings that don't belong elsewhere.
  */
 export function renderAdvancedSection(containerEl: HTMLElement, plugin: R2UploaderPlugin): void {
-	const section = createSection(containerEl, "6. Advanced", false, "settings-2");
+	const section = createSection(containerEl, "Advanced", "settings-2");
 	const fields = new FieldBuilder(plugin);
 
 	fields.toggle(section, "Bypass local CORS check", "Enable if you encounter CORS issues testing uploads from within Obsidian.", "bypassCors");

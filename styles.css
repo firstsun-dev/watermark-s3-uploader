@@ -1,59 +1,121 @@
 /* Paste to S3 — Settings UI styles
  * Namespace: r2-*
- * Sections (Storage/Links/Upload behavior/Image optimization/Watermark/
- * Advanced) are collapsible <details> blocks; "Advanced" sub-disclosures
- * inside a section use a lighter nested-card treatment; a few reusable
- * layout primitives (status block, outcome/result block, two-column field
- * layout) are shared across sections instead of one-off per-section rules.
+ * Left-side navigation (top, horizontally-scrollable tabs on narrow panes)
+ * plus a single active page at a time — never an accordion. "Advanced"
+ * sub-disclosures inside a page use a lighter nested-card treatment; a few
+ * reusable layout primitives (status block, outcome/result block) are
+ * shared across pages instead of one-off per-page rules.
  */
 
-.r2-settings {
-	max-width: 720px;
+/* The settings pane's own width is whatever Obsidian gives it — never
+ * constrained here, so the layout below always uses the full available
+ * width instead of stranding content in a fixed column. */
+
+/* ── Shell layout: sidebar nav + full-width content ──────────────────────── */
+
+.r2-layout {
+	display: grid;
+	grid-template-columns: 180px minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
 }
 
-/* ── Top-level collapsible section ("1. Storage", "2. Links", ...) ──────── */
-
-.r2-settings .r2-section {
-	margin-bottom: 12px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	overflow: hidden;
-	background: var(--background-primary);
+.r2-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	position: sticky;
+	top: 0;
 }
 
-.r2-section-summary {
-	padding: 10px 14px;
-	font-weight: 600;
-	cursor: pointer;
-	background: var(--background-secondary);
-	user-select: none;
-	list-style: none;
+.r2-nav-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	padding: 8px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	user-select: none;
+	color: var(--text-muted);
+	white-space: nowrap;
 }
 
-.r2-section-summary::-webkit-details-marker {
-	display: none;
+.r2-nav-item:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
 }
 
-.r2-section-icon {
+.r2-nav-item.is-active {
+	background: var(--background-modifier-active-hover, var(--background-secondary));
+	color: var(--text-normal);
+	font-weight: 600;
+}
+
+.r2-nav-icon {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	color: var(--text-accent);
+}
+
+.r2-nav-icon svg {
+	width: 15px;
+	height: 15px;
+}
+
+.r2-content {
+	min-width: 0;
+}
+
+/* ── Active page ("Storage", "Links", ...) ────────────────────────────────── */
+
+.r2-page-heading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.r2-page-icon {
 	display: flex;
 	align-items: center;
 	color: var(--text-accent);
 	flex-shrink: 0;
 }
 
-.r2-section-icon svg {
-	width: 15px;
-	height: 15px;
+.r2-page-icon svg {
+	width: 16px;
+	height: 16px;
 }
 
-.r2-section-title {
-	overflow-wrap: anywhere;
+.r2-page-title {
+	margin: 0;
 }
 
-/* ── Nested "Advanced ▸" disclosure inside a section ─────────────────────── */
+/* ── Narrow pane / mobile: horizontally scrollable top tabs, no sidebar ──── */
+
+@media (max-width: 700px) {
+	.r2-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.r2-nav {
+		position: static;
+		flex-direction: row;
+		overflow-x: auto;
+		gap: 4px;
+		padding-bottom: 6px;
+		margin-bottom: 8px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.r2-nav-item {
+		flex-shrink: 0;
+	}
+}
+
+/* ── Nested "Advanced ▸" disclosure inside a page ─────────────────────────── */
 
 .r2-advanced {
 	margin: 8px 0 0;
@@ -129,6 +191,14 @@
 
 .r2-status-warn {
 	color: var(--text-warning, var(--color-orange));
+}
+
+.r2-status-neutral {
+	color: var(--text-muted);
+}
+
+.r2-status-error {
+	color: var(--color-red);
 }
 
 .r2-status-detail,

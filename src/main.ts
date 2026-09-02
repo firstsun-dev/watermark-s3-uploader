@@ -7,7 +7,7 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { minimatch } from "minimatch";
 import { R2UploaderSettings, R2UploaderSettingTab, PasteFunction } from "./settings";
 import { migrateSettings } from "./settings/migrate";
-import { createS3Client, resolvePublicBaseUrl } from "./uploader";
+import { createS3Client } from "./uploader";
 import { pasteHandler } from "./pasteHandler";
 
 const AUTO_UPLOAD_DELAY = 50;
@@ -17,6 +17,10 @@ export default class R2UploaderPlugin extends Plugin {
 	settings: R2UploaderSettings;
 	s3: S3Client;
 	pasteFunction: PasteFunction;
+	/** Transient (not persisted) result of the last "Test connection" click,
+	 *  used by the settings status row to distinguish "connected" from merely
+	 *  "configured but untested". Reset on every provider/credential change. */
+	lastConnectionResult: { ok: boolean; message: string } | null = null;
 
 	log(...args: unknown[]): void {
 		if (this.settings.debugMode) {
@@ -30,11 +34,13 @@ export default class R2UploaderPlugin extends Plugin {
 		return matchesGlobPattern(noteFile.path, this.settings.ignorePattern);
 	}
 
+	/** Creates/updates the S3 client only. Public link generation is handled
+	 *  separately by `resolvePublicUrl()` — the storage endpoint and the
+	 *  inserted public URL are independent concerns. */
 	createS3Client(): void {
 		if (!this.settings.region) return;
-
-		this.settings.imageUrlPath = resolvePublicBaseUrl(this.settings);
 		this.s3 = createS3Client(this.settings);
+		this.lastConnectionResult = null;
 	}
 
 	async onload() {

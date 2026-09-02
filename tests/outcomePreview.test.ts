@@ -35,6 +35,19 @@ describe("computeOutcomePreview — same source of truth as the real upload path
 		expect(preview.objectKey.endsWith(".png")).toBe(true);
 	});
 
+	it("R2 destination without a custom public URL: preview never leaks the S3 API endpoint into the inserted link", () => {
+		const s: R2UploaderSettings = {
+			...base,
+			storageProvider: "cloudflare-r2",
+			bucket: "blog-assets",
+			useCustomEndpoint: true,
+			customEndpoint: "https://abc123.r2.cloudflarestorage.com/",
+		};
+		const preview = computeOutcomePreview(s, { basename: "my-note", now: new Date("2026-09-02T11:30:15") });
+		expect(preview.url).not.toContain("r2.cloudflarestorage.com");
+		expect(preview.url).toBe(resolvePublicUrl(s, preview.objectKey));
+	});
+
 	it("local destination: previews a vault-relative path, not a public URL", () => {
 		const s: R2UploaderSettings = {
 			...base,

@@ -38,11 +38,20 @@ export function computeOutcomePreview(
 	return { objectKey, url, markdown: wrapFileDependingOnType(url, "image", "") };
 }
 
-export function renderOutcomePreview(containerEl: HTMLElement, plugin: R2UploaderPlugin): void {
+export interface OutcomePreviewHandle {
+	/** Re-renders just this preview block in place. Call after any field that
+	 *  feeds `computeOutcomePreview` changes (public URL mode, base URL, query
+	 *  string key/value, folder, provider, ...) — this never touches the rest
+	 *  of the settings page, so it can be called on every keystroke without
+	 *  redrawing the tab and losing input focus. */
+	refresh(): void;
+}
+
+export function renderOutcomePreview(containerEl: HTMLElement, plugin: R2UploaderPlugin): OutcomePreviewHandle {
 	const wrap = containerEl.createDiv({ cls: "r2-outcome-preview" });
 	wrap.createEl("p", { text: "Outcome preview", cls: "r2-outcome-heading" });
 
-	const render = () => {
+	const refresh = () => {
 		wrap.querySelectorAll(".r2-outcome-row").forEach((el) => el.remove());
 		const result = computeOutcomePreview(plugin.settings);
 
@@ -55,5 +64,6 @@ export function renderOutcomePreview(containerEl: HTMLElement, plugin: R2Uploade
 		linkRow.createEl("code", { text: result.markdown, cls: "r2-outcome-value r2-outcome-value-wrap" });
 	};
 
-	render();
+	refresh();
+	return { refresh };
 }

@@ -6,6 +6,7 @@ import { requestTimeout } from "@smithy/fetch-http-handler/dist-es/request-timeo
 import { FetchHttpHandler, FetchHttpHandlerOptions } from "@smithy/fetch-http-handler";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { R2UploaderSettings } from "./settings";
+import { getStorageProvider, providerCanAutoPublicUrl } from "./settings/migrate";
 
 const DEFAULT_PDF_HEIGHT = 800;
 const DEFAULT_PPT_HEIGHT = "600px";
@@ -127,7 +128,7 @@ export async function uploadFile(
 		Body: new Uint8Array(buf),
 		ContentType: file.type,
 	}));
-	return appendQueryString(settings.imageUrlPath + key, settings.queryStringKey, settings.queryStringValue);
+	return resolvePublicUrl(settings, key);
 }
 
 export function formatTimestamp(d: Date): string {
@@ -152,14 +153,24 @@ export function resolveFolder(folder: string, noteBasename: string, now: Date): 
 
 const SEQ_PADDING = 4;
 
-/** Public base URL an uploaded object will be served from (S3 mode only). */
+/**
+ * Public base URL an uploaded object will be served from (S3 mode only).
+ *
+ * This is deliberately independent of the S3 API endpoint used by
+ * `createS3Client()` — an S3-compatible API endpoint (e.g. Cloudflare R2's
+ * `*.r2.cloudflarestorage.com`) is not a public object URL. Only AWS S3's
+ * standard virtual-hosted addressing can be derived automatically; every
+ * other provider requires an explicit custom public URL, and returns "" when
+ * one hasn't been configured rather than falling back to the API endpoint.
+ */
 export function resolvePublicBaseUrl(settings: R2UploaderSettings): string {
-	if (settings.useCustomImageUrl) {
+	if (settings.useCustomImageUrl && settings.customImageUrl) {
 		return settings.customImageUrl;
 	}
-	const baseUrl = settings.useCustomEndpoint
-		? settings.customEndpoint
-		: `https://s3.${settings.region}.amazonaws.com/`;
+	if (!providerCanAutoPublicUrl(getStorageProvider(settings))) {
+		return settings.customImageUrl ?? "";
+	}
+	const baseUrl = `https://s3.${settings.region}.amazonaws.com/`;
 	return settings.forcePathStyle
 		? `${baseUrl}${settings.bucket}/`
 		: baseUrl.replace("://", `://${settings.bucket}.`);

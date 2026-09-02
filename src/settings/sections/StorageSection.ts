@@ -29,8 +29,9 @@ export function renderStorageSection(
 	containerEl: HTMLElement,
 	plugin: R2UploaderPlugin,
 	redraw: () => void,
+	refreshStatus: () => void = redraw,
 ): void {
-	const section = createSection(containerEl, "1. Storage", true, "database");
+	const section = createSection(containerEl, "Storage", "database");
 	const fields = new FieldBuilder(plugin);
 	const destination = getStorageDestination(plugin.settings);
 
@@ -47,6 +48,7 @@ export function renderStorageSection(
 					plugin.createS3Client();
 					await plugin.saveSettings();
 					redraw();
+					refreshStatus();
 				}));
 
 	if (destination === "local") {
@@ -66,15 +68,16 @@ export function renderStorageSection(
 					plugin.createS3Client();
 					await plugin.saveSettings();
 					redraw();
+					refreshStatus();
 				});
 		});
 
-	fields.string(section, "Bucket", "", "Bucket name", "bucket", { onChanged: () => plugin.createS3Client() });
+	fields.string(section, "Bucket", "", "Bucket name", "bucket", { onChanged: () => { plugin.createS3Client(); refreshStatus(); } });
 	fields.string(section, "Folder", "Supports ${year}, ${month}, ${day}, ${basename}", "blog/${basename}", "folder");
 
 	new Setting(section).setName("Credentials").setHeading();
-	fields.string(section, "Access key ID", "", "Access key", "accessKey", { password: true, onChanged: () => plugin.createS3Client() });
-	fields.string(section, "Secret access key", "", "Secret key", "secretKey", { password: true, onChanged: () => plugin.createS3Client() });
+	fields.string(section, "Access key ID", "", "Access key", "accessKey", { password: true, onChanged: () => { plugin.createS3Client(); refreshStatus(); } });
+	fields.string(section, "Secret access key", "", "Secret key", "secretKey", { password: true, onChanged: () => { plugin.createS3Client(); refreshStatus(); } });
 
 	// ── Test connection: after the required fields — configure → test → see result ──
 	const statusEl = section.createDiv({ cls: "r2-connection-status" });
@@ -87,6 +90,7 @@ export function renderStorageSection(
 			.onClick(async () => {
 				btn.setButtonText("Testing…").setDisabled(true);
 				const result = await testS3Connection(plugin);
+				plugin.lastConnectionResult = result;
 				if (result.ok) {
 					statusEl.setText(`✓ Connected to ${plugin.settings.bucket}`);
 					statusEl.className = "r2-connection-status r2-success";
@@ -96,12 +100,13 @@ export function renderStorageSection(
 					statusEl.className = "r2-connection-status r2-error";
 					new Notice("Connection failed: " + result.message);
 				}
+				refreshStatus();
 				activeWindow.setTimeout(() => btn.setButtonText("Test connection").setDisabled(false), TEST_RESULT_TIMEOUT);
 			}));
 
 	// ── Advanced: protocol-level fields, hidden unless needed ────────────────
 	const advanced = createAdvancedDisclosure(section);
-	fields.string(advanced, "Region", '"auto" for Cloudflare R2', "auto", "region", { onChanged: () => plugin.createS3Client() });
+	fields.string(advanced, "Region", '"auto" for Cloudflare R2', "auto", "region", { onChanged: () => { plugin.createS3Client(); refreshStatus(); } });
 
 	new Setting(advanced)
 		.setName("Custom endpoint")
@@ -111,6 +116,7 @@ export function renderStorageSection(
 				plugin.settings.useCustomEndpoint = v;
 				plugin.createS3Client();
 				await plugin.saveSettings();
+				refreshStatus();
 			}));
 
 	new Setting(advanced)
@@ -125,7 +131,8 @@ export function renderStorageSection(
 					plugin.settings.customEndpoint = normalized.trim();
 					plugin.createS3Client();
 					await plugin.saveSettings();
+					refreshStatus();
 				}));
 
-	fields.toggle(advanced, "Force path-style URLs", 'Use "endpoint/bucket/file" instead of "bucket.endpoint/file".', "forcePathStyle", () => plugin.createS3Client());
+	fields.toggle(advanced, "Force path-style URLs", 'Use "endpoint/bucket/file" instead of "bucket.endpoint/file".', "forcePathStyle", () => { plugin.createS3Client(); refreshStatus(); });
 }

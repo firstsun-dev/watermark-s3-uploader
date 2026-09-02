@@ -30,7 +30,7 @@ function applyMode(s: R2UploaderSettings, mode: WatermarkMode): void {
  * options" disclosure so they don't outweigh the watermark configuration.
  */
 export function renderWatermarkSection(containerEl: HTMLElement, plugin: R2UploaderPlugin): void {
-	const section = createSection(containerEl, "5. Watermark", false, "stamp");
+	const section = createSection(containerEl, "Watermark", "stamp");
 
 	let previewCanvas: HTMLCanvasElement | null = null;
 

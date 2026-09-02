@@ -1,9 +1,10 @@
 import { Setting } from "obsidian";
 import type R2UploaderPlugin from "../../main";
-import { renderOutcomePreview } from "../components/OutcomePreview";
+import { renderOutcomePreview, type OutcomePreviewHandle } from "../components/OutcomePreview";
 import { createAdvancedDisclosure, createSection } from "../components/SettingSection";
 import { FieldBuilder } from "../components/fields";
-import { getPublicUrlMode, getStorageDestination } from "../migrate";
+import { providerLabel } from "../components/StatusRow";
+import { getPublicUrlMode, getStorageDestination, getStorageProvider, providerCanAutoPublicUrl } from "../migrate";
 import type { PublicUrlMode } from "../types";
 
 /**
@@ -16,7 +17,7 @@ export function renderLinksSection(
 	plugin: R2UploaderPlugin,
 	redraw: () => void,
 ): void {
-	const section = createSection(containerEl, "2. Links", false, "link");
+	const section = createSection(containerEl, "Links", "link");
 	const fields = new FieldBuilder(plugin);
 
 	if (getStorageDestination(plugin.settings) === "local") {
@@ -28,20 +29,28 @@ export function renderLinksSection(
 		return;
 	}
 
+	const canAutoPublicUrl = providerCanAutoPublicUrl(getStorageProvider(plugin.settings));
+
 	new Setting(section)
 		.setName("Public URL")
-		.setDesc("How the URL inserted into your note is derived.")
-		.addDropdown((d) =>
+		.setDesc(canAutoPublicUrl
+			? "How the URL inserted into your note is derived."
+			: `${providerLabel(getStorageProvider(plugin.settings))} does not support an automatically-derived public URL — a custom domain is required.`)
+		.addDropdown((d) => {
 			d.addOption("auto", "Automatic / provider default")
 				.addOption("custom", "Custom domain / CDN")
 				.setValue(getPublicUrlMode(plugin.settings))
+				.setDisabled(!canAutoPublicUrl)
 				.onChange(async (v: string) => {
 					plugin.settings.publicUrlMode = v as PublicUrlMode;
 					plugin.settings.useCustomImageUrl = v === "custom";
 					plugin.createS3Client();
 					await plugin.saveSettings();
 					redraw();
-				}));
+				});
+		});
+
+	let preview: OutcomePreviewHandle | undefined;
 
 	if (getPublicUrlMode(plugin.settings) === "custom") {
 		new Setting(section)
@@ -57,12 +66,13 @@ export function renderLinksSection(
 						plugin.settings.customImageUrl = normalized.trim();
 						plugin.createS3Client();
 						await plugin.saveSettings();
+						preview?.refresh();
 					}));
 	}
 
-	renderOutcomePreview(section, plugin);
+	preview = renderOutcomePreview(section, plugin);
 
 	const advanced = createAdvancedDisclosure(section);
-	fields.string(advanced, "Query string key", "", "E.g. v", "queryStringKey");
-	fields.string(advanced, "Query string value", "", "E.g. 1", "queryStringValue");
+	fields.string(advanced, "Query string key", "", "E.g. v", "queryStringKey", { onChanged: () => preview?.refresh() });
+	fields.string(advanced, "Query string value", "", "E.g. 1", "queryStringValue", { onChanged: () => preview?.refresh() });
 }

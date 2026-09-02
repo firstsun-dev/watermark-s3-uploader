@@ -11,7 +11,7 @@ import { isAutoUploadOnCreateEnabled, setAutoUploadOnCreateEnabled } from "../mi
  * these together with destination config.
  */
 export function renderUploadBehaviorSection(containerEl: HTMLElement, plugin: R2UploaderPlugin): void {
-	const section = createSection(containerEl, "3. Upload behavior", false, "upload");
+	const section = createSection(containerEl, "Upload behavior", "upload");
 	const fields = new FieldBuilder(plugin);
 
 	createSubheading(section, "Triggers");

@@ -91,7 +91,7 @@ describe("accessors — safe even before migration has run", () => {
 	});
 });
 
-describe("applyProviderDefaults — provider selection never destroys manual config", () => {
+describe("applyProviderDefaults — coherent runtime state, user-owned fields untouched", () => {
 	it("prefills region and enables custom endpoint for a completely blank Cloudflare R2 setup", () => {
 		const s = { ...DEFAULT_SETTINGS };
 		const patch = applyProviderDefaults(s, "cloudflare-r2");
@@ -99,24 +99,23 @@ describe("applyProviderDefaults — provider selection never destroys manual con
 		expect(patch.useCustomEndpoint).toBe(true);
 	});
 
-	it("does not overwrite a manually configured region when switching provider", () => {
+	it("region/endpoint semantics are provider-owned: switching overwrites a stale manual region rather than leaving it stuck on the old provider's value", () => {
 		const s = { ...DEFAULT_SETTINGS, region: "eu-west-2" };
 		const patch = applyProviderDefaults(s, "cloudflare-r2");
-		expect(patch.region).toBeUndefined();
+		expect(patch.region).toBe("auto");
 	});
 
-	it("does not overwrite a manually configured custom endpoint when switching provider", () => {
-		const s = { ...DEFAULT_SETTINGS, customEndpoint: "https://my-existing-endpoint.example/" };
+	it("clears a custom endpoint that belonged to a different provider rather than carrying a stale, incompatible host over", () => {
+		const s = { ...DEFAULT_SETTINGS, useCustomEndpoint: true, customEndpoint: "https://my-existing-endpoint.example/" };
 		const patch = applyProviderDefaults(s, "minio");
-		expect(patch.useCustomEndpoint).toBeUndefined();
+		expect(patch.useCustomEndpoint).toBe(true);
+		expect(patch.customEndpoint).toBe("");
 	});
 
-	it("never auto-disables a manually toggled-on useCustomEndpoint, even with no URL typed yet", () => {
-		// User flipped "Custom endpoint" on in Advanced but hasn't typed a URL,
-		// then switches to a provider that doesn't require a custom endpoint.
+	it("switching to a provider that doesn't require a custom endpoint forces useCustomEndpoint off, even if it was manually toggled on for a different provider", () => {
 		const s = { ...DEFAULT_SETTINGS, useCustomEndpoint: true, customEndpoint: "" };
 		const patch = applyProviderDefaults(s, "aws-s3");
-		expect(patch.useCustomEndpoint).toBeUndefined();
+		expect(patch.useCustomEndpoint).toBe(false);
 	});
 
 	it("still turns useCustomEndpoint on for a provider that requires it when nothing has been set yet", () => {
@@ -125,17 +124,79 @@ describe("applyProviderDefaults — provider selection never destroys manual con
 		expect(patch.useCustomEndpoint).toBe(true);
 	});
 
-	it("does not touch forcePathStyle if the user already turned it on", () => {
+	it("forcePathStyle is provider-owned: switching to AWS always resets it to AWS's default (false), even if it was on for a previous provider", () => {
 		const s = { ...DEFAULT_SETTINGS, forcePathStyle: true };
 		const patch = applyProviderDefaults(s, "aws-s3");
-		expect(patch.forcePathStyle).toBeUndefined();
+		expect(patch.forcePathStyle).toBe(false);
 	});
 
-	it("leaves bucket/credentials untouched (applyProviderDefaults never mentions them)", () => {
-		const s = { ...DEFAULT_SETTINGS, bucket: "keep-me", accessKey: "keep-key" };
+	it("leaves bucket/credentials/custom public URL untouched (applyProviderDefaults never mentions them)", () => {
+		const s = { ...DEFAULT_SETTINGS, bucket: "keep-me", accessKey: "keep-key", customImageUrl: "https://cdn.example.com/" };
 		const patch = applyProviderDefaults(s, "backblaze-b2");
 		expect(patch).not.toHaveProperty("bucket");
 		expect(patch).not.toHaveProperty("accessKey");
+		expect(patch).not.toHaveProperty("folder");
+		expect(patch).not.toHaveProperty("secretKey");
+		expect(patch).not.toHaveProperty("customImageUrl");
+	});
+
+	it("forces publicUrlMode to custom when switching to a provider that can't auto-derive a public URL", () => {
+		const s = { ...DEFAULT_SETTINGS, publicUrlMode: "auto" as const, useCustomImageUrl: false };
+		const patch = applyProviderDefaults(s, "cloudflare-r2");
+		expect(patch.publicUrlMode).toBe("custom");
+		expect(patch.useCustomImageUrl).toBe(true);
+	});
+
+	it("does not force publicUrlMode away from auto when switching to AWS S3 (which supports an automatic public URL)", () => {
+		const s = { ...DEFAULT_SETTINGS, publicUrlMode: "auto" as const, useCustomImageUrl: false };
+		const patch = applyProviderDefaults(s, "aws-s3");
+		expect(patch.publicUrlMode).toBeUndefined();
+	});
+
+	describe("provider transitions produce a coherent effective configuration", () => {
+		it("fresh → AWS: no custom endpoint, automatic public URL stays available", () => {
+			const patch = applyProviderDefaults(DEFAULT_SETTINGS, "aws-s3");
+			expect(patch).toMatchObject({ storageProvider: "aws-s3", region: "us-east-1", useCustomEndpoint: false, customEndpoint: "", forcePathStyle: false });
+			expect(patch.publicUrlMode).toBeUndefined();
+		});
+
+		it("fresh → R2: custom endpoint required, auto public URL not available so publicUrlMode is forced to custom", () => {
+			const patch = applyProviderDefaults(DEFAULT_SETTINGS, "cloudflare-r2");
+			expect(patch).toMatchObject({ storageProvider: "cloudflare-r2", region: "auto", useCustomEndpoint: true, customEndpoint: "", forcePathStyle: false, publicUrlMode: "custom", useCustomImageUrl: true });
+		});
+
+		it("AWS → R2: no leftover AWS endpoint state, R2 semantics fully applied", () => {
+			const aws = { ...DEFAULT_SETTINGS, ...applyProviderDefaults(DEFAULT_SETTINGS, "aws-s3") };
+			const patch = applyProviderDefaults(aws, "cloudflare-r2");
+			expect(patch).toMatchObject({ storageProvider: "cloudflare-r2", region: "auto", useCustomEndpoint: true, customEndpoint: "" });
+		});
+
+		it("R2 → AWS: the R2 endpoint is cleared and useCustomEndpoint is turned off — never AWS-in-the-UI while runtime still points at the R2 host", () => {
+			const r2 = { ...DEFAULT_SETTINGS, ...applyProviderDefaults(DEFAULT_SETTINGS, "cloudflare-r2"), customEndpoint: "https://abc123.r2.cloudflarestorage.com/" };
+			const patch = applyProviderDefaults(r2, "aws-s3");
+			expect(patch.storageProvider).toBe("aws-s3");
+			expect(patch.useCustomEndpoint).toBe(false);
+			expect(patch.customEndpoint).toBe("");
+			expect(patch.region).toBe("us-east-1");
+		});
+
+		it("R2 → MinIO: the R2-specific endpoint host is cleared (invalid for MinIO), but custom-endpoint requirement and path-style stay coherent for MinIO", () => {
+			const r2 = { ...DEFAULT_SETTINGS, ...applyProviderDefaults(DEFAULT_SETTINGS, "cloudflare-r2"), customEndpoint: "https://abc123.r2.cloudflarestorage.com/" };
+			const patch = applyProviderDefaults(r2, "minio");
+			expect(patch.storageProvider).toBe("minio");
+			expect(patch.useCustomEndpoint).toBe(true);
+			expect(patch.customEndpoint).toBe("");
+			expect(patch.forcePathStyle).toBe(true);
+		});
+
+		it("MinIO → AWS: custom endpoint and path-style are both turned off", () => {
+			const minio = { ...DEFAULT_SETTINGS, ...applyProviderDefaults(DEFAULT_SETTINGS, "minio"), customEndpoint: "https://minio.internal.example/" };
+			const patch = applyProviderDefaults(minio, "aws-s3");
+			expect(patch.storageProvider).toBe("aws-s3");
+			expect(patch.useCustomEndpoint).toBe(false);
+			expect(patch.customEndpoint).toBe("");
+			expect(patch.forcePathStyle).toBe(false);
+		});
 	});
 });
 

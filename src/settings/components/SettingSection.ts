@@ -1,21 +1,24 @@
 import { setIcon } from "obsidian";
 
-/** A top-level, collapsible settings section ("1. Storage", "2. Links", ...). */
+/**
+ * A top-level settings page ("Storage", "Links", ...). Only one of these is
+ * ever mounted at a time — the settings tab renders whichever page is
+ * active in its navigation, so this is a plain container with a heading,
+ * never a collapsible `<details>` accordion.
+ */
 export function createSection(
 	parent: HTMLElement,
 	label: string,
-	open = false,
 	icon?: string,
 ): HTMLElement {
-	const details = parent.createEl("details", { cls: "r2-section" });
-	if (open) details.setAttribute("open", "");
-	const summary = details.createEl("summary", { cls: "r2-section-summary" });
+	const page = parent.createDiv({ cls: "r2-page" });
+	const heading = page.createDiv({ cls: "r2-page-heading" });
 	if (icon) {
-		const iconEl = summary.createSpan({ cls: "r2-section-icon" });
+		const iconEl = heading.createSpan({ cls: "r2-page-icon" });
 		setIcon(iconEl, icon);
 	}
-	summary.createSpan({ text: label, cls: "r2-section-title" });
-	return details;
+	heading.createEl("h3", { text: label, cls: "r2-page-title" });
+	return page;
 }
 
 /** A secondary "Advanced ▸" disclosure nested inside a section, for
