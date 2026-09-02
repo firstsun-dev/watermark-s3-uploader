@@ -32,7 +32,13 @@ export function renderUploadBehaviorSection(containerEl: HTMLElement, plugin: R2
 	fields.toggle(section, "PDF", "", "uploadPdf");
 
 	createSubheading(section, "Exclusions");
-	fields.string(section, "Ignore pattern", "Glob patterns to skip, comma-separated.", "Private/*, **/drafts/**", "ignorePattern");
+	fields.string(
+		section,
+		"Ignore pattern",
+		"Glob patterns matched against note paths and vault attachment paths (comma-separated). An upload is skipped if either path matches. Ignored pastes/drops fall back to normal Obsidian handling.",
+		"Private/**, **/drafts/**",
+		"ignorePattern",
+	);
 
 	createSubheading(section, "Per-note overrides");
 	const overrideDesc = section.createEl("p", { cls: "setting-item-description r2-frontmatter-note" });
