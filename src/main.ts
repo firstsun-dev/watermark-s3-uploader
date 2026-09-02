@@ -6,7 +6,8 @@ import { Editor, MarkdownView, Notice, Plugin, TFile } from "obsidian";
 import { S3Client } from "@aws-sdk/client-s3";
 import { minimatch } from "minimatch";
 import { R2UploaderSettings, R2UploaderSettingTab, PasteFunction } from "./settings";
-import { migrateSettings } from "./settings/migrate";
+import { migrateSettings, getStorageDestination } from "./settings/migrate";
+import { isConfigurationComplete, testS3Connection } from "./settings/components/StatusRow";
 import { createS3Client } from "./uploader";
 import { pasteHandler } from "./pasteHandler";
 
@@ -43,10 +44,22 @@ export default class R2UploaderPlugin extends Plugin {
 		this.lastConnectionResult = null;
 	}
 
+	/** Runs a connection check once at startup (S3 destination + fully
+	 *  configured only) so the settings status row can show real
+	 *  connectivity the first time it's opened, instead of requiring a
+	 *  manual "Test connection" click every session. Silent — no Notice,
+	 *  fire-and-forget, never blocks onload. */
+	private async autoTestConnectionOnLaunch(): Promise<void> {
+		if (getStorageDestination(this.settings) !== "s3") return;
+		if (!isConfigurationComplete(this)) return;
+		this.lastConnectionResult = await testS3Connection(this);
+	}
+
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new R2UploaderSettingTab(this.app, this));
 		this.createS3Client();
+		void this.autoTestConnectionOnLaunch();
 
 		this.addCommand({
 			id: "upload-image",
