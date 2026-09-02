@@ -92,6 +92,23 @@ export function getPublicUrlMode(settings: R2UploaderSettings): "auto" | "custom
 	return settings.publicUrlMode ?? derivePublicUrlMode(settings);
 }
 
+// ── Provider display labels ──────────────────────────────────────────────
+
+const PROVIDER_LABELS: Record<StorageProvider, string> = {
+	"cloudflare-r2": "Cloudflare R2",
+	"aws-s3": "AWS S3",
+	"minio": "MinIO",
+	"backblaze-b2": "Backblaze B2",
+	"other": "S3-compatible storage",
+};
+
+/** Never throws for an unrecognized provider value — falls back to the
+ *  generic "S3-compatible storage" label, same fallback posture as
+ *  {@link getProviderPreset}. */
+export function providerLabel(provider: StorageProvider): string {
+	return PROVIDER_LABELS[provider] ?? "S3-compatible storage";
+}
+
 // ── Provider presets ─────────────────────────────────────────────────────
 // Field ownership: accessKey/secretKey/bucket/folder/customImageUrl are
 // user-owned and applyProviderDefaults never touches them. region,

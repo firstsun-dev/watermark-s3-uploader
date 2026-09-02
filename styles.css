@@ -141,6 +141,23 @@
 	color: var(--text-normal);
 }
 
+/* ── Full-width field row (long values: endpoint/base URLs) ──────────────── */
+/* Stacks the label above the input instead of squeezing a long URL into the
+ * narrow right-hand control column that a normal two-column Setting uses. */
+
+.r2-full-width-row {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.r2-full-width-row .setting-item-control {
+	width: 100%;
+}
+
+.r2-full-width-row .setting-item-control input {
+	width: 100%;
+}
+
 /* Sub-section headers inside an open section (e.g. "Additional file types") */
 .r2-subsection-heading {
 	font-size: 0.8em;

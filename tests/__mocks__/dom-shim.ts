@@ -98,12 +98,14 @@ export class FakeEl {
 		}
 		return el;
 	}
+	/** Supports either a class selector (".foo") or a bare tag name ("input"). */
 	querySelectorAll(sel: string): FakeEl[] {
-		const cls = sel.replace(/^\./, "");
+		const isClass = sel.startsWith(".");
+		const needle = sel.replace(/^\./, "");
 		const out: FakeEl[] = [];
 		const walk = (el: FakeEl) => {
 			for (const c of el.children) {
-				if (c.cls.has(cls)) out.push(c);
+				if (isClass ? c.cls.has(needle) : c.tag === needle) out.push(c);
 				walk(c);
 			}
 		};

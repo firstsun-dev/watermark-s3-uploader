@@ -1,19 +1,8 @@
 import { HeadBucketCommand } from "@aws-sdk/client-s3";
 import type R2UploaderPlugin from "../../main";
 import { resolvePublicBaseUrl } from "../../uploader";
-import { getProviderPreset, getPublicUrlMode, getStorageDestination, getStorageProvider } from "../migrate";
-
-const PROVIDER_LABELS: Record<string, string> = {
-	"cloudflare-r2": "Cloudflare R2",
-	"aws-s3": "AWS S3",
-	"minio": "MinIO",
-	"backblaze-b2": "Backblaze B2",
-	"other": "S3-compatible storage",
-};
-
-export function providerLabel(provider: string): string {
-	return PROVIDER_LABELS[provider] ?? "S3-compatible storage";
-}
+import { getProviderPreset, getPublicUrlMode, getStorageDestination, getStorageProvider, providerLabel } from "../migrate";
+import { validateStorageConfiguration } from "../validation";
 
 /** Shared connection test, used by both the top status row and the Storage
  *  section's own "Test connection" button — one implementation, one source
@@ -37,16 +26,17 @@ export async function testS3Connection(plugin: R2UploaderPlugin): Promise<{ ok: 
  * can't auto-derive a public URL isn't configured until a custom public URL
  * is set either. This is what keeps the status honest instead of showing
  * "✓ Ready" for a contradictory/incomplete setup.
+ *
+ * Delegates the storage-field checks (bucket/endpoint/region/credentials) to
+ * {@link validateStorageConfiguration} — the same helper the Storage
+ * section's "Test connection" preflight uses — so the two never drift apart.
  */
 export function isConfigurationComplete(plugin: R2UploaderPlugin): boolean {
 	const s = plugin.settings;
-	if (getStorageDestination(s) === "local") {
-		return !!s.localUploadFolder;
-	}
-	if (!(s.accessKey && s.secretKey && s.bucket && s.region)) return false;
+	if (!validateStorageConfiguration(s).valid) return false;
+	if (getStorageDestination(s) === "local") return true;
 
 	const preset = getProviderPreset(getStorageProvider(s));
-	if (preset.requiresCustomEndpoint && !(s.useCustomEndpoint && s.customEndpoint)) return false;
 	if (!preset.canAutoPublicUrl && !(getPublicUrlMode(s) === "custom" && s.customImageUrl)) return false;
 
 	return true;

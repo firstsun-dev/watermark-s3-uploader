@@ -3,8 +3,7 @@ import type R2UploaderPlugin from "../../main";
 import { renderOutcomePreview, type OutcomePreviewHandle } from "../components/OutcomePreview";
 import { createAdvancedDisclosure, createSection } from "../components/SettingSection";
 import { FieldBuilder } from "../components/fields";
-import { providerLabel } from "../components/StatusRow";
-import { getPublicUrlMode, getStorageDestination, getStorageProvider, providerCanAutoPublicUrl } from "../migrate";
+import { getPublicUrlMode, getStorageDestination, getStorageProvider, providerCanAutoPublicUrl, providerLabel } from "../migrate";
 import type { PublicUrlMode } from "../types";
 
 /**
@@ -53,7 +52,7 @@ export function renderLinksSection(
 	let preview: OutcomePreviewHandle | undefined;
 
 	if (getPublicUrlMode(plugin.settings) === "custom") {
-		new Setting(section)
+		const baseUrlSetting = new Setting(section)
 			.setName("Base URL")
 			.setDesc("Public base URL for uploaded objects, e.g. Your CDN or custom domain.")
 			.addText((text) =>
@@ -68,6 +67,7 @@ export function renderLinksSection(
 						await plugin.saveSettings();
 						preview?.refresh();
 					}));
+		baseUrlSetting.settingEl.addClass("r2-full-width-row");
 	}
 
 	preview = renderOutcomePreview(section, plugin);
