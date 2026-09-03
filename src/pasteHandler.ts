@@ -2,12 +2,12 @@ import { Editor, Notice } from "obsidian";
 import { filesize } from "filesize";
 import { R2UploaderSettings } from "./settings";
 import { compressImage, convertToWebP, applyWatermark } from "./imageProcessor";
-import { uploadFile, formatTimestamp, wrapFileDependingOnType, resolveFolder } from "./uploader";
+import { uploadFile, wrapFileDependingOnType, buildObjectKey } from "./uploader";
+import { matchesIgnorePattern } from "./ignorePattern";
 import { S3Client } from "@aws-sdk/client-s3";
 
 const TABLE_SURROUNDING_CHARS = 20;
 const REFRESH_DELAY = 100;
-const SEQ_PADDING = 4;
 
 export async function replaceText(
 	editor: Editor,
@@ -96,14 +96,11 @@ async function handleFileUpload(
 
 		const buf = await processedFile.arrayBuffer();
 		const seq = startSeq + fileIndex;
-		const seqStr = String(seq).padStart(SEQ_PADDING, "0");
-		const ts = formatTimestamp(new Date());
 		const ext = processedFile.name.split(".").pop() ?? "bin";
-		const newFileName = `${seqStr}_${ts}.${ext}`;
+		const key = buildObjectKey(folder, noteBasename, seq, ext, new Date());
+		const newFileName = key.split("/").pop() as string;
 		log(`pipeline: final — ${newFileName} (${filesize(buf.byteLength)})`);
 
-		const keyFolder = resolveFolder(folder, noteBasename, new Date());
-		const key = keyFolder ? `${keyFolder}/${newFileName}` : newFileName;
 		const uploadableFile = new File([buf], newFileName, { type: processedFile.type });
 
 		let url: string;
@@ -133,7 +130,10 @@ export async function pasteHandler(
 	getFilePath: ((path: string) => string) | null,
 	getActiveFile: () => { name: string; basename: string; path: string } | null,
 	getFrontmatter: (file: { name: string; path: string }) => Record<string, unknown> | undefined,
-	shouldIgnore: () => boolean,
+	/** Vault-relative path of the source file that triggered this upload, if
+	 *  known (e.g. the newly created attachment for auto-upload-on-create).
+	 *  Pasted/dropped clipboard files typically have no vault path. */
+	sourceFilePath: string | undefined,
 	log: (...args: unknown[]) => void,
 	saveSettings: () => Promise<void>,
 	directFile?: File,
@@ -168,7 +168,7 @@ export async function pasteHandler(
 	}
 
 	if (files.length === 0) return;
-	if (shouldIgnore()) return;
+	if (matchesIgnorePattern(settings.ignorePattern, { notePath: noteFile.path, filePath: sourceFilePath })) return;
 	if (ev) ev.preventDefault();
 	new Notice("Uploading files...");
 

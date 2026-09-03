@@ -4,10 +4,12 @@
 import { Editor, MarkdownView, Notice, Plugin, TFile } from "obsidian";
 // Trigger release via source change
 import { S3Client } from "@aws-sdk/client-s3";
-import { minimatch } from "minimatch";
-import { R2UploaderSettings, DEFAULT_SETTINGS, R2UploaderSettingTab, PasteFunction } from "./settings";
+import { R2UploaderSettings, R2UploaderSettingTab, PasteFunction } from "./settings";
+import { migrateSettings, getStorageDestination } from "./settings/migrate";
+import { isConfigurationComplete, testS3Connection } from "./settings/components/StatusRow";
 import { createS3Client } from "./uploader";
 import { pasteHandler } from "./pasteHandler";
+import { matchesIgnorePattern } from "./ignorePattern";
 
 const AUTO_UPLOAD_DELAY = 50;
 const IMAGE_EXT_REGEX = /\.(jpg|jpeg|png|gif|webp)$/i;
@@ -16,6 +18,10 @@ export default class R2UploaderPlugin extends Plugin {
 	settings: R2UploaderSettings;
 	s3: S3Client;
 	pasteFunction: PasteFunction;
+	/** Transient (not persisted) result of the last "Test connection" click,
+	 *  used by the settings status row to distinguish "connected" from merely
+	 *  "configured but untested". Reset on every provider/credential change. */
+	lastConnectionResult: { ok: boolean; message: string } | null = null;
 
 	log(...args: unknown[]): void {
 		if (this.settings.debugMode) {
@@ -23,33 +29,31 @@ export default class R2UploaderPlugin extends Plugin {
 		}
 	}
 
-	shouldIgnoreCurrentFile(): boolean {
-		const noteFile = this.app.workspace.getActiveFile();
-		if (!noteFile || !this.settings.ignorePattern) return false;
-		return matchesGlobPattern(noteFile.path, this.settings.ignorePattern);
-	}
-
+	/** Creates/updates the S3 client only. Public link generation is handled
+	 *  separately by `resolvePublicUrl()` — the storage endpoint and the
+	 *  inserted public URL are independent concerns. */
 	createS3Client(): void {
 		if (!this.settings.region) return;
-
-		if (this.settings.useCustomImageUrl) {
-			this.settings.imageUrlPath = this.settings.customImageUrl;
-		} else {
-			const baseUrl = this.settings.useCustomEndpoint
-				? this.settings.customEndpoint
-				: `https://s3.${this.settings.region}.amazonaws.com/`;
-			this.settings.imageUrlPath = this.settings.forcePathStyle
-				? `${baseUrl}${this.settings.bucket}/`
-				: baseUrl.replace("://", `://${this.settings.bucket}.`);
-		}
-
 		this.s3 = createS3Client(this.settings);
+		this.lastConnectionResult = null;
+	}
+
+	/** Runs a connection check once at startup (S3 destination + fully
+	 *  configured only) so the settings status row can show real
+	 *  connectivity the first time it's opened, instead of requiring a
+	 *  manual "Test connection" click every session. Silent — no Notice,
+	 *  fire-and-forget, never blocks onload. */
+	private async autoTestConnectionOnLaunch(): Promise<void> {
+		if (getStorageDestination(this.settings) !== "s3") return;
+		if (!isConfigurationComplete(this)) return;
+		this.lastConnectionResult = await testS3Connection(this);
 	}
 
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new R2UploaderSettingTab(this.app, this));
 		this.createS3Client();
+		void this.autoTestConnectionOnLaunch();
 
 		this.addCommand({
 			id: "upload-image",
@@ -83,14 +87,15 @@ export default class R2UploaderPlugin extends Plugin {
 	private async handleFileCreate(file: TFile) {
 		if (this.settings.disableAutoUploadOnCreate) return;
 		if (!IMAGE_EXT_REGEX.test(file.path)) return;
-		
+
 		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!activeView || this.shouldIgnoreCurrentFile()) return;
+		if (!activeView) return;
+		if (matchesIgnorePattern(this.settings.ignorePattern, { notePath: activeView.file?.path, filePath: file.path })) return;
 
 		try {
 			const fileContent = await this.app.vault.readBinary(file);
 			const newFile = new File([fileContent], file.name, { type: `image/${file.extension}` });
-			await this.runPasteHandler(null, activeView.editor, newFile);
+			await this.runPasteHandler(null, activeView.editor, newFile, file.path);
 			
 			// Wait for the editor to update with the new Obsidian link
 			await new Promise((resolve) => activeWindow.setTimeout(resolve, AUTO_UPLOAD_DELAY));
@@ -121,7 +126,7 @@ export default class R2UploaderPlugin extends Plugin {
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as R2UploaderSettings;
+		this.settings = migrateSettings(await this.loadData());
 	}
 
 	async saveSettings() {
@@ -132,6 +137,7 @@ export default class R2UploaderPlugin extends Plugin {
 		ev: ClipboardEvent | DragEvent | Event | null,
 		editor: Editor,
 		directFile?: File,
+		sourceFilePath?: string,
 	): Promise<void> {
 		const adapter = this.app.vault.adapter;
 		const getFilePath = "getFilePath" in adapter
@@ -155,15 +161,10 @@ export default class R2UploaderPlugin extends Plugin {
 				if (!(tfile instanceof TFile)) return undefined;
 				return this.app.metadataCache.getFileCache(tfile)?.frontmatter;
 			},
-			() => this.shouldIgnoreCurrentFile(),
+			sourceFilePath,
 			(...args) => this.log(...args),
 			() => this.saveSettings(),
 			directFile,
 		);
 	}
-}
-
-function matchesGlobPattern(filePath: string, pattern: string): boolean {
-	if (!pattern?.trim()) return false;
-	return pattern.split(",").map((p) => p.trim()).some((p) => minimatch(filePath, p));
 }

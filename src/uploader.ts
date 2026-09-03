@@ -6,6 +6,7 @@ import { requestTimeout } from "@smithy/fetch-http-handler/dist-es/request-timeo
 import { FetchHttpHandler, FetchHttpHandlerOptions } from "@smithy/fetch-http-handler";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { R2UploaderSettings } from "./settings";
+import { getStorageProvider, providerCanAutoPublicUrl } from "./settings/migrate";
 
 const DEFAULT_PDF_HEIGHT = 800;
 const DEFAULT_PPT_HEIGHT = "600px";
@@ -127,13 +128,7 @@ export async function uploadFile(
 		Body: new Uint8Array(buf),
 		ContentType: file.type,
 	}));
-	let urlString = settings.imageUrlPath + key;
-	if (settings.queryStringKey && settings.queryStringValue) {
-		const urlObject = new URL(urlString);
-		urlObject.searchParams.append(settings.queryStringKey, settings.queryStringValue);
-		urlString = urlObject.toString();
-	}
-	return urlString;
+	return resolvePublicUrl(settings, key);
 }
 
 export function formatTimestamp(d: Date): string {
@@ -148,6 +143,77 @@ export function resolveFolder(folder: string, noteBasename: string, now: Date): 
 		.replace("${month}", String(now.getMonth() + 1).padStart(2, "0"))
 		.replace("${day}", String(now.getDate()).padStart(2, "0"))
 		.replace("${basename}", noteBasename.replace(/ /g, "-"));
+}
+
+// ── Shared path/URL resolution ───────────────────────────────────────────
+// These are the single source of truth for how an object key and its public
+// URL are derived. Both the real upload path (above/pasteHandler.ts) and the
+// settings "outcome preview" use these exact functions so the preview can
+// never drift from actual upload behavior.
+
+const SEQ_PADDING = 4;
+
+/**
+ * Public base URL an uploaded object will be served from (S3 mode only).
+ *
+ * This is deliberately independent of the S3 API endpoint used by
+ * `createS3Client()` — an S3-compatible API endpoint (e.g. Cloudflare R2's
+ * `*.r2.cloudflarestorage.com`) is not a public object URL. Only AWS S3's
+ * standard virtual-hosted addressing can be derived automatically; every
+ * other provider requires an explicit custom public URL, and returns "" when
+ * one hasn't been configured rather than falling back to the API endpoint.
+ */
+export function resolvePublicBaseUrl(settings: R2UploaderSettings): string {
+	if (settings.useCustomImageUrl && settings.customImageUrl) {
+		return settings.customImageUrl;
+	}
+	if (!providerCanAutoPublicUrl(getStorageProvider(settings))) {
+		return settings.customImageUrl ?? "";
+	}
+	const baseUrl = `https://s3.${settings.region}.amazonaws.com/`;
+	return settings.forcePathStyle
+		? `${baseUrl}${settings.bucket}/`
+		: baseUrl.replace("://", `://${settings.bucket}.`);
+}
+
+/** Appends `key=value` as a query string param, if both are set. */
+export function appendQueryString(urlString: string, key: string, value: string): string {
+	if (!key || !value) return urlString;
+	try {
+		const urlObject = new URL(urlString);
+		urlObject.searchParams.append(key, value);
+		return urlObject.toString();
+	} catch {
+		return urlString;
+	}
+}
+
+/** Full public URL for an object key, including query string, S3 mode only. */
+export function resolvePublicUrl(settings: R2UploaderSettings, key: string): string {
+	return appendQueryString(
+		resolvePublicBaseUrl(settings) + key,
+		settings.queryStringKey,
+		settings.queryStringValue,
+	);
+}
+
+export function buildFileName(seq: number, now: Date, ext: string): string {
+	const seqStr = String(seq).padStart(SEQ_PADDING, "0");
+	return `${seqStr}_${formatTimestamp(now)}.${ext}`;
+}
+
+/** Object key (folder + generated filename) for an upload — the same logic
+ *  used for the real upload and for the settings outcome preview. */
+export function buildObjectKey(
+	folder: string,
+	basename: string,
+	seq: number,
+	ext: string,
+	now: Date = new Date(),
+): string {
+	const keyFolder = resolveFolder(folder, basename, now);
+	const fileName = buildFileName(seq, now, ext);
+	return keyFolder ? `${keyFolder}/${fileName}` : fileName;
 }
 
 export const wrapFileDependingOnType = (location: string, type: string, localBase: string) => {
