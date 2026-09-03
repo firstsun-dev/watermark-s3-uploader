@@ -1,4 +1,4 @@
-# Watermark Bucket Uploader
+# Paste to S3
 
 An Obsidian plugin that intercepts image paste/drop events, optionally converts to WebP, applies a canvas-based watermark, uploads to Cloudflare R2 (or any S3-compatible storage), and inserts the resulting URL as a markdown image link.
 
@@ -26,7 +26,7 @@ An Obsidian plugin that intercepts image paste/drop events, optionally converts 
 
 ## Configuration
 
-Go to **Settings → Watermark Bucket Uploader** to configure your storage. The settings page is organized around six questions, in order:
+Go to **Settings → Paste to S3** to configure your storage. The settings page is organized around six questions, in order:
 
 1. **Storage** — Where will my files be stored?
 2. **Links** — What URL gets inserted into the note?
